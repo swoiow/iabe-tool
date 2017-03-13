@@ -8,13 +8,13 @@ A tool for auto answer in iabe website.
 1. Complete key &iv &web service address in WebApp.py
 2. Complete login user in Config.py
 3. Run the following command
-        ```
-        pip install -r requirements.txt
+    ```
+    pip install -r requirements.txt
 
-        python __init__.py
+    python __init__.py
 
-        python WebApp.py
-        ```
+    python WebApp.py
+    ```
 4. Visit: http://localhost
 
 Older [version](https://github.com/swoiow/doitpy/tree/master/AutoAnswer)
