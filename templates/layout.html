@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> {% block title %}layout{% end %} </title>
+
+    <link href="//cdn.bootcss.com/semantic-ui/2.2.9/semantic.min.css" rel="stylesheet">
+    <script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+    <script src="//cdn.bootcss.com/semantic-ui/2.2.9/semantic.min.js"></script>
+
+    <!--<link rel="stylesheet" href="{{ static_url('diy.semantic.min.css') }}">-->
+    <style type="text/css">{% block css %}{% end %}</style>
+</head>
+
+<body>
+    <div class="ui thin sidebar inverted vertical menu">
+        <a class="item i_index" href="/index"> 帐号列表 </a>
+        <a class="item i_adduser" href="/api/users?method=add"> 添加帐号 </a>
+        <a class="item i_face" href="/api/settings"> 日志与设置 </a>
+        <a class="item i_logout" href="/logout"> 登出 </a>
+        <div class="item right">
+            <a class="ui button item i_pre">上一页</a>
+            <a class="ui button item i_next">下一页</a>
+        </div>
+    </div>
+
+    <div id="navbar" class="ui fixed menu">
+        <div class="ui container">
+            <div class="left menu mobile-view" style="display: none">
+                <a class="launch icon item"> <i class="content icon"></i> </a>
+            </div>
+            <div class="left menu pc-view">
+                <a class="item i_index" href="/index"> 帐号列表 </a>
+                <a class="item i_adduser" href="/api/users?method=add"> 添加帐号 </a>
+                <a class="item i_face" href="/api/settings"> 日志与设置 </a>
+                <a class="item i_logout" href="/logout"> 登出 </a>
+            </div>
+            <!--<div class="item right"> <div class="mini ui buttons"> <button class="ui button i_pre">上一页</button> <div class="or"></div> <button class="ui button i_next">下一页</button> </div> </div>-->
+        </div>
+    </div>
+    <div class="ui divider hidden container"></div>
+
+    <div class="dimmed pusher">
+        <div id="content" class="ui container" style="margin-top: 3em">
+            <div class="rtn-msg" style="margin-bottom: 1em">
+                <div class="ui warning message hidden">
+                  <i class="close icon"></i>
+                  <div class="header">  </div>
+                    <p></p>
+                </div>
+            </div>
+            {% block content %}
+            <div class="ui segment"><strong>Nothing yet.</strong></div>
+            {% end %}
+        </div>
+
+        <div class="ui divider hidden container"></div>
+    </div>
+    <script src="{{ static_url('common.min.js') }}"></script>
+</body>
+
+</html>

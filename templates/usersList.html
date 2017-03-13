@@ -1,0 +1,103 @@
+{% extends "layout.html" %}
+{% block title %}帐号列表{% end %}
+{% block css %}
+pre { white-space: pre-wrap; word-wrap: break-word } div.tiny.button { margin: 2px auto }
+.menu{ display: flex;justify-content: space-between }
+{% end %}
+
+{% block content %}
+{% if users %}
+<div class="menu">
+    <div>
+        <div class="1circular tiny ui icon button olive i_call-finish">
+            <i class="checkmark icon"></i>
+            完成
+        </div>
+        <div class="1circular tiny ui icon button grey i_call-stop">
+            <i class="ban icon"></i>
+            停止
+        </div>
+        <div class="1circular tiny ui icon button teal i_call-refresh">
+            <i class="refresh icon"></i>
+            刷新
+        </div>
+        <div class="1circular tiny ui icon button yellow i_call-exchange">
+            <i class="exchange icon"></i>
+            兑换
+        </div>
+    </div>
+    <div>
+        <div class="tiny ui button i_call-cw" data-type="cg_old"> 闯关(旧版)</div>
+        <div class="tiny ui button i_call-cw" data-type="cgw1"> 闯关 P1</div>
+        <div class="tiny ui button i_call-cw" data-type="cgw4"> 闯关 P4</div>
+        <div class="tiny ui button i_call-mn" data-type="mn_old"> 模拟 P1</div>
+        <div class="tiny ui button i_call-mn" data-type="mnks4"> 模拟 P4</div>
+    </div>
+    <div>
+        <div class="ui small search">
+            <div class="ui icon input">
+                <input class="prompt" type="text" placeholder="Search ...">
+                <i class="search icon"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<table class="ui center aligned sortable selectable celled table">
+    <thead>
+    <tr class="single line">
+        <th class="left aligned collapsing">
+            <div class="ui master checkbox">
+                <input title="" type="checkbox" name="select-all" tabindex="0"/>
+                <label>帐号</label>
+            </div>
+        </th>
+        <th class="collapsing">密码</th>
+        <th class="collapsing">学习进度</th>
+        <th class="collapsing">今日学时</th>
+        <th class="collapsing">添加时间</th>
+        <th>运行状态</th>
+        <th class="collapsing">操作</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for user in users %}
+    <tr class="single line collapsing" data-uid="{{ escape(user.username) }}">
+        <td class="left aligned username">
+            <div class="ui checkbox child">
+                <input title="" type="checkbox" name="username" tabindex="0"/>
+                <label>{{ escape(user.username) }}</label>
+            </div>
+        </td>
+        <td class=" i_pwd"> ***</td>
+        <td class=" i_progress"> 未查询</td>
+        <td class=" i_today-train"> 未查询</td>
+        <td class=" i_add-time"> {{ dateformat(user.create_date) }}</td>
+        <td class=" i_status"> status</td>
+        <td class=" i_ctrl">
+            <button class="mini ui button"> 视频</button>
+            <button class="mini ui button i_slog" data-uid="{{ escape(user.username) }}"> 日志</button>
+            <button class="mini ui button i_note"> 备注</button>
+        </td>
+    </tr>
+    {% end %}
+    </tbody>
+</table>
+
+{% else %}
+<div class="ui segment"><strong>No User Found.</strong></div>
+{% end %}
+<div class="ui small modal transition" style="margin-top: -92.5px;">
+    <div class="header"></div>
+    <div class="content"></div>
+    <div class="actions">
+        <div class="ui positive button"> Okay</div>
+    </div>
+</div>
+<script type="text/javascript">
+    $('.ui.search').search({source: content});
+    $(".i_index").addClass("active");
+    var $pages = Number("{{ escape(page)}}");
+    $('<div class="item right" style="padding: 0 1.15em;"> <div class="mini ui buttons"> <button class="ui button i_pre">上一页</button> <div class="or"></div> <button class="ui button i_next">下一页</button> </div> </div>').appendTo('#navbar .container');
+</script>
+{% end %}
