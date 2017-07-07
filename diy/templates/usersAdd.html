@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block title %}添加帐号{% end %}
+{% block css %}
+<style>
+    input { margin: 5px auto !important; }
+</style>
+{% end %}
+
+{% block content %}
+<h4 class="ui horizontal divider header"> 批量添加 </h4>
+<div id="addForm" class="ui form segment vl-add">
+    <div class="mini ui error message"></div>
+    {% module xsrf_form_html() %}
+    <div class="inline fields">
+        <div class="field">
+            <div class="ui checkbox add">
+                <input title="" type="checkbox" name="has_zone"/>
+                <label>地区前缀</label>
+            </div>
+        </div>
+
+        <div class="field disabled input_zone">
+            <input type="text" name="zone" placeholder="如：fs/jm/yl"/>
+        </div>
+
+        <div class="field">
+            <label>默认密码</label>
+            <input title="" type="text" name="password" value="1234"/>
+        </div>
+    </div>
+
+    <div class="field">
+        <label>帐号列表</label>
+        <textarea name="username" placeholder="帐号以 ' ' 或 ',' 分割"></textarea>
+    </div>
+
+    <div class="field">
+        <label> 备注 </label>
+        <textarea rows="3" name="para3" placeholder="任务备注 (选填)"></textarea>
+    </div>
+
+    <button class="ui primary submit button"> 提交</button>
+</div>
+{% end %}
+
+{% block js %}
+<script type="text/javascript">
+    $(".i_add").addClass("active");
+</script>
+{% end %}

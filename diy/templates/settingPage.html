@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block title %}日志与设置{% end %}
+{% block css %}
+<style>
+    .ui.form.i_license div { margin: 5px auto; }
+</style>
+{% end %}
+
+{% block content %}
+<h4 class="ui horizontal divider header"> 系统日志 </h4>
+<form class="ui form wlog">
+    <div class="small ui fluid action input">
+        <input type="text" name="log_content" placeholder="日志内容">
+        <button class="small ui primary button"> 写日志</button>
+    </div>
+</form>
+<div class="ui raised segments">
+    {% if log_content %}
+    {% for item in log_content %}
+    <div class="ui segment">
+        <p> {{ escape(item[0]) }}： {{ escape(item[1]) }} </p>
+    </div>
+    {% end %}
+    {% else %}
+    <div class="ui segment"><strong> 暂时没日志 </strong></div>
+    {% end %}
+</div>
+
+<h4 class="ui horizontal divider header"> 系统设置 </h4>
+<div class="ui form i_license">
+    <div class="small ui labeled input">
+        <div class="ui label">
+            识别码
+        </div>
+        <input placeholder="识别码" readonly="" type="text" value="{{ escape(license) }}"/>
+    </div>
+    <div class="small ui fluid labeled action input">
+        <div class="ui label">
+            注册码
+        </div>
+        <input placeholder="未注册" type="text" value=""/>
+        <button class="small ui primary button"> 注册</button>
+    </div>
+</div>
+
+<h4 class="ui horizontal divider header"> config设置 </h4>
+<h4 class="ui horizontal divider header"> 数据库 </h4>
+<a>
+    <button class="small ui primary button"> 初始化数据库</button>
+</a>
+{% end %}
+
+{% block js %}
+<script type="text/javascript">
+    $(".i_face").addClass("active");
+</script>
+{% end %}

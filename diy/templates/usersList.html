@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+{% block title %}帐号列表{% end %}
+{% block css %}
+<style>
+    pre { white-space: pre-wrap; word-wrap: break-word; font-family: Consolas, "Courier New", Menlo, Monaco, monospace; }
+</style>
+{% end %}
+
+{% block content %}
+<div class="ui small modal transition" style="margin-top: -92.5px;">
+    <div class="header"></div>
+    <div class="content"></div>
+    <div class="actions">
+        <div class="ui positive button"> Okay</div>
+    </div>
+</div>
+
+{% if users %}
+<div id="mainContent">
+
+    <table class="ui center aligned sortable selectable celled table">
+        <thead>
+        <tr class="single line">
+            <th class="left aligned collapsing">
+                <div class="ui master checkbox">
+                    <input title="" type="checkbox" name="select-all" tabindex="0"/>
+                    <label>(序号) 帐号</label>
+                </div>
+            </th>
+            <th class="collapsing">密码</th>
+            <th class="collapsing">学习进度</th>
+            <th class="collapsing">今日学时</th>
+            <th class="collapsing">添加时间</th>
+            <th>运行状态</th>
+            <th class="collapsing">操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for idx, user in enumerate(users) %}
+        <tr class="single line collapsing" data-uid="{{ escape(user.username) }}">
+            <td class="left aligned username">
+                <div class="ui checkbox child">
+                    <input title="" type="checkbox" name="username" tabindex="0"/>
+                    <label><i>({{ idx + 1 }})</i> {{ escape(user.username) }} </label>
+                </div>
+            </td>
+            <td class="i_pwd"> 未查询</td>
+            <td class="i_progress"> 未查询</td>
+            <td class="i_xue"> 未查询</td>
+            <td> {{ dateformat(user.create_date) }}</td>
+            <td class="i_status"> {{ escape(user.notes) }}</td>
+            <td class="i_ctrl">
+                <a href="/api/face/{{ user.username }}">
+                    <button class="mini ui button "> 视频</button>
+                </a>
+                <button class="mini ui button i_log" data-uid="{{ escape(user.username) }}"> 日志</button>
+                <button class="mini ui button i_note"> 备注</button>
+            </td>
+        </tr>
+        {% end %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="ui segment"><strong>No User Found.</strong></div>
+{% end %}
+
+<script type="text/javascript">
+    $('<div class="right menu"><a class="item i_pre" href="{{ page[0] }}"> 上一页 </a> <a class="item i_next" href="{{ page[1] }}"> 下一页 </a></div>').appendTo('#navbar .container');
+    $('<div class="ui dropdown item"> <div class="text"> 更多功能</div> <i class="dropdown icon"></i> <div class="menu"> <div class="icon item i_call-finish"><i class="checkmark icon"></i> 完成</div> <div class="icon item i_call-refresh"><i class="refresh icon"></i> 刷新</div> <div class="icon item i_call-exchange"><i class="exchange icon"></i> 兑换1</div> <div class="icon item i_call-exchange4"><i class="exchange icon"></i> 兑换4</div> <div class="item i_call-cw" data-type="cg0"> 闯关(旧版)</div> <div class="item i_call-cw" data-type="cg1"> 闯关 P1</div> <div class="item i_call-cw" data-type="cg4"> 闯关 P4</div> <div class="item i_call-mn" data-type="mn1"> 模拟 P1</div> <div class="item i_call-mn" data-type="mn4"> 模拟 P4</div> </div> </div>').appendTo('#navbar .container');
+</script>
+{% end %}
+
+{% block js %}
+<script type="text/javascript">
+    $(".i_index").addClass("active");
+    $('.ui.dropdown').dropdown({useLabels: false, maxSelections: 3});
+</script>
+{% end %}
