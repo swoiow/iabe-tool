@@ -1,0 +1,5 @@
+#!/bin/bash
+rm -rf $OPENSHIFT_DATA_DIR/static
+rm -rf $OPENSHIFT_DATA_DIR/templates
+cp -r $OPENSHIFT_REPO_DIR/diy/static $OPENSHIFT_DATA_DIR/static
+cp -r $OPENSHIFT_REPO_DIR/diy/templates $OPENSHIFT_DATA_DIR/templates

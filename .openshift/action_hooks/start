@@ -2,4 +2,5 @@
 # The logic to start up your application should be put in this
 # script. The application will work only if it binds to
 # $OPENSHIFT_DIY_IP:8080
-nohup $OPENSHIFT_DATA_DIR/bin/python $OPENSHIFT_REPO_DIR/diy/openshift.py > $OPENSHIFT_LOG_DIR/tornado.log 2>&1 &
+export PATH=$OPENSHIFT_DATA_DIR/bin:$PATH
+nohup python3 $OPENSHIFT_REPO_DIR/diy/openshift.py > $OPENSHIFT_LOG_DIR/tornado.log 2>&1 &
