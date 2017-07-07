@@ -281,7 +281,7 @@ class WorkerHandler(BaseHandler):
     def task(self, username, action, **kwargs):
         var = self.get_argument("v")
 
-        action_map = dict(cg="call_cgw", mn="call_moni_v2")
+        action_map = dict(cg="call_cgw_v2", mn="call_moni_v2")
         func = action_map[action]
         user = self._get_user_orm(username)
         if isinstance(user, User):
