@@ -3,6 +3,7 @@
 """
 已知问题：
     1. 模拟v2，需要先改密码。
+    2. webserver 暂未使用
 """
 
 from __future__ import absolute_import
@@ -80,12 +81,12 @@ class BaseHandler(tornado.web.RequestHandler):
     def get_accounts(self, param):
         block_rule = re.compile("[\w]+")
         params = self.request.arguments.get(param)
+
         if all([isinstance(params, list), len(params) == 1]):
             params = params[0]
-
         result = re.findall(block_rule, S(params))
         if len(result) > 0:
-            return result
+            return map(lambda user: user.lower(), result)
 
         return []
 
@@ -126,7 +127,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.finish(_debug_request)
 
     def setup_page(self, page_number):
-        f = lambda d: "?" + parse.urlencode(d)
+        f = lambda data: "?" + parse.urlencode(data)
         req_query = {k: v[0] for k, v in list(self.request.query_arguments.items())}
         prev_pn = 1 if (page_number < 2) else (page_number - 1)
         next_pn = page_number + 1
@@ -141,6 +142,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return pn
 
     def _get_user_orm(self, username):
+        username = username.lower()
         with db_read() as db_ctx:
             query = db_ctx.query(User).filter(User.username == username).first()
             return query
@@ -405,7 +407,7 @@ class ApiHandler(BaseHandler):
         has_zone = to_bool(self.get_argument("has_zone", False))
         if has_zone:
             zone = self.get_argument("zone")
-            users_lt = map(lambda u: zone + u, users_lt)
+            users_lt = map(lambda user: zone + user, users_lt)
 
         self._add_account(username=users_lt, pwd=password, note=note)
 
