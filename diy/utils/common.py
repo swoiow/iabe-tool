@@ -238,7 +238,7 @@ class IabeWebService(BaseClass, BaseWebService):
         return o
 
     @classmethod
-    def from_simple(cls, username, password, *args, **kwargs):
+    def from_simple(cls, username, password, **kwargs):
         o = cls(username, password, **kwargs)
         o.init_ws(**req_kwargs)
 
@@ -326,15 +326,39 @@ class IabeWebService(BaseClass, BaseWebService):
         assert len(ls_code) > 0
         return ls_code[0]
 
-    def _get_moni4(self):
-        # [未通过测试]
+    def _get_moni1(self):
+        # [完成]
         self.login()
+        encrypt = BasicItf.encrypt_ws
+
+        result = self._client.service.Hb_ShuJuShangChuanJieKou_XueXiRiZhi(
+            XueYuanLiuShuiHao=encrypt(self.LiuShuiHao).decode(),
+            XueHao=encrypt(self.username).decode(),
+            PassWord=encrypt(self.password).decode(),
+            TiMuLiuShuiHao=encrypt("0").decode(),
+            TrueOrFalse=encrypt("T").decode(),
+            BeiZhu=encrypt(random.randint(90, 100)).decode(),
+        )
+
+        if BasicItf.to_bool(result):
+            return True
+
+        return False
+
+    def _get_moni4(self):
+        # [完成]
+        self.login()
+        KEY, IV = os.environ.get("common_key"), os.environ.get("common_iv")
+        encrypt = partial(BasicItf.encrypt, key=KEY, iv=IV)
 
         result = self._client.service.ZQ_XueXiRiZhiToExamThree(
-            XueYuanLiuShuiHao=str(BasicItf.encrypt_ws(self.LiuShuiHao), "utf8"),
-            BeiZhu=str(BasicItf.encrypt_ws(90), "utf8")
+            XueYuanLiuShuiHao=str(encrypt(self.LiuShuiHao), "utf8"),
+            BeiZhu=str(encrypt(90), "utf8")
         )
-        print(result.unescape())
+        if BasicItf.to_bool(result.unescape()):
+            return True
+
+        return False
 
 
 class Iabe(BaseClass):
@@ -413,56 +437,42 @@ class Iabe(BaseClass):
         self.logger.info(u"闯关已完成...")
         return True
 
-    def call_moni_v1(self, var="mn_old", g_retry=3, lscode="", **kwargs):
+    def call_moni_v1(self, var="mn1", retry=3):
         """
-        :param var: choose in "mn_old, mnks4". Default: mn_old
+        :param var: choose in "mn1, mn4". Default: mn1
         """
-        __msg_ = u" 准备执行'模拟任务: %s' " % var
+        __msg_ = u" 准备执行'(v1)模拟任务: %s' " % var
         self.logger.info(__msg_.center(30, "="))
 
-        if g_retry < 0:
-            self.error(u"[!!!] 出现异常。")
+        if retry < 0:
+            self.logger.error(u"[!!!] 出现异常。")
             return
-
-        client = self.WebService
-        ls_code = lscode or self.call_get_ls_code(**kwargs)
-        resp_code = ""
-
-        if not self.is_login:
-            self.login()
-            return self.call_moni_v1(var=var, g_retry=g_retry - 1, lscode=lscode, **kwargs)
-
-        if var == "mn_old":
-            data = {
-                "ls_code": self.encrypt_ws(ls_code),
-                "x_code": self.encrypt_ws(self.username),
-                "password": self.encrypt_ws(self.password),
-                "timuls_code": self.encrypt_ws("0"),
-                "bool": self.encrypt_ws("T"),
-                "mark": self.encrypt_ws(random.randint(90, 100)),
-            }
-
-            resp_code = client.func_hb_shujushangchuanjiekou_xuexirizhi(sessionObj=self.session, **data)
-
-        if var == "mnks4":
-            data = {
-                "ls_code": self.encrypt(ls_code),
-                "mark": self.encrypt(random.randint(90, 100)),
-            }
-            data.update(dict(zone=self.zone))
-            resp_code = client.func_zq_xuexirizhitoexamthree(sessionObj=self.session, **data)
-
-        if resp_code == "true":
-            self.info(u"已完成一套！10秒后自动退出...\n\n")
         else:
-            self.warning(u"[!!] 返回结果: %s，请手动检查任务情况，或该任务已达到上限。\n\n" % repr(resp_code))
+            result = False
+            self.login()
 
-        return time.sleep(10)
+            try:
+                if var == "mn1":
+                    result = self.ws._get_moni1()
+
+                elif var == "mn4":
+                    result = self.ws._get_moni4()
+
+                if result:
+                    self.logger.info(u"已完成一套！10秒后自动退出...\n\n")
+                    return time.sleep(10)
+                else:
+                    self.logger.warning(u"[!!] 返回结果: %s，请手动检查任务情况，或该任务已达到上限。\n\n" % repr(result))
+                    return False
+
+            except requests.exceptions.ConnectionError:
+                retry -= 1
+                self.call_moni_v1(var=var, retry=retry)
 
     def call_moni_v2(self, var, retry=3):
         # assert var in [2, 9]
         _var_ = 9 if var == "mn4" else 2
-        __msg_ = u" 准备执行'模拟任务: %s' " % var
+        __msg_ = u" 准备执行'(v2)模拟任务: %s' " % var
         self.logger.info(__msg_.center(30, "="))
 
         if retry < 0:
@@ -475,13 +485,15 @@ class Iabe(BaseClass):
                 result = self._call_moni_v2(_var_)
                 if result:
                     self.logger.info(u"已完成一套！10秒后自动退出...\n\n")
+                    time.sleep(10)
                     return dict(result=True) if result == "1" else dict(result=result)
+                else:
+                    self.logger.warning(u"[!!] 返回结果: %s，请手动检查任务情况，或该任务已达到上限。\n\n" % repr(result))
+                    return False
 
             except requests.exceptions.ConnectionError:
                 retry -= 1
                 self.call_moni_v2(var=var, retry=retry)
-
-        return time.sleep(10)
 
     def call_exchange(self, var="1"):
         self.logger.info(u" 准备执行'兑换{}任务' ".format(var).center(30, "="))
@@ -531,12 +543,12 @@ class Iabe(BaseClass):
             "Origin": "http://iabe.cn",
         })
 
-        gt = self.web_session.get(
+        visit_token = self.web_session.get(
             "http://iabe.cn/student/ExamTestRecord.aspx?subject=%s" % var,
             headers=self._default_header
         )
         url_seeker = URLSeeker(("input", "id", "ctl00_ContentPlaceHolder1_Subject"), dom_attr=(True, "value"))
-        url_seeker.feed(gt.text)
+        url_seeker.feed(visit_token.text)
 
         payload = dict(Score=random.randint(90, 100), Subject=url_seeker.dom_attr_value)
 
@@ -544,7 +556,6 @@ class Iabe(BaseClass):
             "http://iabe.cn/student/ExamTestRecord.aspx",
             data=payload,
             headers=headers,
-            # proxies=proxy_settings
         )
         return resp.text
 
@@ -714,11 +725,13 @@ class Iabe(BaseClass):
 
 
 def load_data():
+    KEY, IV = os.environ.get("common_key"), os.environ.get("common_iv")
+
     def _base_info_1():
         url = "http://www.iabe.cn/EcarServer/LoadBaseData.aspx"
         data = dict()
 
-        method = BasicItf.encrypt("3", key=os.environ.get("common_key"), iv=os.environ.get("common_iv"))
+        method = BasicItf.encrypt("3", key=KEY, iv=IV)
         resp = requests.post(url, data=dict(method=method), headers=default_header)
         raw = resp.json()
         for item in raw["Ecar_Topic"]:
@@ -734,8 +747,8 @@ def load_data():
         base_data = []
         column_data = _base_info_1()
 
-        m = BasicItf.encrypt("4", key=os.environ.get("common_key"), iv=os.environ.get("common_iv"))
-        resp = requests.post(url, data=dict(method=m), headers=default_header)
+        method = BasicItf.encrypt("4", key=KEY, iv=IV)
+        resp = requests.post(url, data=dict(method=method), headers=default_header)
         raw = resp.json()
         for item in raw["Ecar_Knowledge"]:
             for i in ["OpenClaim", "PassClaim", "OpenClaimByKnowledgeNo", "IsEmphasis", "MaxHours", "TiMuCount"]:
@@ -752,10 +765,10 @@ def load_data():
 
     PKL_PATH = Config.PKL_PATH
     if not os.path.exists(PKL_PATH):
-        base_data = _base_info_2()
+        data = _base_info_2()
 
         with open(PKL_PATH, "wb") as wf:
-            pickle.dump(base_data, wf)
+            pickle.dump(data, wf)
 
         return load_data()
     else:

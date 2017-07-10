@@ -1,10 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-已知问题：
-    1. 模拟v2，需要先改密码。
-    2. webserver 暂未使用
-"""
 
 from __future__ import absolute_import
 
@@ -289,6 +284,9 @@ class WorkerHandler(BaseHandler):
         if isinstance(user, User):
             with db_read() as db_ctx:
                 client = Iabe.set_account(user, db_obj=db_ctx, log_var="db", log_level="info")
+                if all([action == "mn", user.password == "1234"]):  # 强制使用v1方法
+                    func = "call_moni_v1"
+
                 getattr(client, func)(var)
 
 
