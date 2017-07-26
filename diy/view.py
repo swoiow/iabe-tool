@@ -20,12 +20,7 @@ import tornado.web
 from sqlalchemy import or_, and_
 
 import Config
-from utils.basic import *
-from utils.common import *
-from utils.dbModel import *
-from utils.dbUnit import *
-import utils.detectFaceUnit as detectFaceUnit
-from utils import PY_VERSION
+from utils import *
 
 if PY_VERSION == 3:
     B = char_transform
@@ -39,11 +34,11 @@ def TWorker(func):
     def wrapper(*args, **kwargs):
         def t_func(*args, **kwargs):
             """
-            :param args: 
-            :param kwargs: 
+            :param args:
+            :param kwargs:
                     t_name
                     callback
-            :return: 
+            :return:
             """
             result = func(*args, **kwargs)
 
@@ -160,15 +155,12 @@ class Authenticate(BaseHandler):
                 self.set_secure_cookie("user", check_eml, expires_days=None)
                 self.set_secure_cookie("lv", str(100), expires_days=None)
 
-                return self.redirect("/")
+                return self.redirect(self.get_argument("next", "/"))
 
         return self.redirect(self.settings['login_url'])
 
     def login(self):
-        if self.user in Config.ALLOW_LOGIN:
-            return self.redirect("/")
-
-        return self.render("loginPage.html", post_url=self.get_login_url())
+        return self.render("loginPage.html", post_url=self.get_login_url(), next=self.get_argument("next", "/"))
 
     def logout(self):
         self.clear_all_cookies()
@@ -329,6 +321,7 @@ class ApiHandler(BaseHandler):
 
             return self.finish(resp)
 
+    @tornado.web.authenticated
     @tornado.web.asynchronous
     def delete(self, action, *args, **kwargs):
         if action == "face":
@@ -338,6 +331,17 @@ class ApiHandler(BaseHandler):
             return self.send_error(404)
 
     def show_face(self, username, *args, **kwargs):
+        face_md5 = self.get_argument("md5", None)
+        if face_md5:
+            with db_read() as db_ctx:
+                query = db_ctx.query(Face.enc_data).filter(
+                    Face.photo_md5 == face_md5,
+                    Face.used == 0,
+                    Face.photo_type == "children"
+                ).one()
+
+                return dict(data=query.enc_data)
+
         with db_read() as db_ctx:
             query = db_ctx.query(Face).filter(
                 and_(
@@ -467,17 +471,23 @@ class ApiHandler(BaseHandler):
                             )
                         session.add(i)
 
-        return dict(result=True)
+                return dict(result=True, found=len(face_discern))
+
+            else:
+                return dict(result=False, msg="exist !")
 
     def _del_face(self):
-        md5 = self.get_accounts("md5")
+        md5 = self.get_argument("md5")
         with db_write() as session:
-            query_img = session.query(Face).filter(Face.photo_md5 == md5)
-            if query_img.first():
-                query_img.update(dict(used=1))
-                session.add(query_img)
+            query_imgs = session.query(Face).filter(Face.photo_md5 == md5, Face.photo_type == "children")
+            for img_item in query_imgs.all():
+                img_item.used = 1
+                session.add(img_item)
+                # TODO: rm file
 
-        return dict(result=True)
+                return dict(result=True)
+            else:
+                return dict(result=None)
 
     def do_exchange(self, username):
         var = self.get_argument("var", None)

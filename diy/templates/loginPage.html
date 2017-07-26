@@ -14,6 +14,7 @@
     <form action="{{ post_url }}" method="post">
         <div class="form-group">
             {% module xsrf_form_html() %}
+            <input type="hidden" name="next" value="{{ escape(next) }}"/>
             <input type="email" name="eml" required="required"/>
             <label for="input" class="control-label">认证</label><i class="bar"></i>
         </div>

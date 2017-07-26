@@ -116,7 +116,7 @@ def detect_faces(image_path=None, image_buff=None):
     result = []
     for idx, resize_crop_img in _detect_faces(image_path, image_buff):
         # Save new img
-        file_name = image_path.rsplit("\\", 1)[1]
+        file_name = os.path.basename(image_path)
         save_path = os.path.join(build_dir, "%s_%s" % (idx, file_name))
         cv2.imwrite(save_path, resize_crop_img)
 
@@ -126,7 +126,7 @@ def detect_faces(image_path=None, image_buff=None):
             result.append(dict(path=r["path"], src=r["src_path"]))
 
     # cv2.imshow("Faces found", image)
-    cv2.waitKey(0)
+    # cv2.waitKey(0)  # comment because linux error
 
     return result
 

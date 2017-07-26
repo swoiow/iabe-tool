@@ -13,8 +13,9 @@
 <div class="ui special cards">
     {% if data %}
     {% for d in data %}
-    <div class="card">
-        <div id="img-{{ d.photo_md5 }}" class="blurring dimmable image">
+    <div class="card" data-uid="{{ username }}" data-md5="{{ d.photo_md5 }}">
+        <textarea id="{{ d.photo_md5 }}" style="display: none"></textarea>
+        <div class="blurring dimmable image">
             <div class="ui dimmer">
                 <div class="content">
                     <div class="center">
@@ -26,8 +27,8 @@
         </div>
         <div class="extra content">
             <div class="ui two buttons">
-                <div class="ui basic blue button"> 复制</div>
-                <div class="ui basic green button"> 标记已使用</div>
+                <div class="ui basic blue button" data-btn="copy"> 复制</div>
+                <div class="ui basic green button" data-btn="used"> 标记已使用</div>
             </div>
         </div>
     </div>

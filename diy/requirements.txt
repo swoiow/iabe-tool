@@ -4,4 +4,6 @@ tornado
 pyotp
 sqlalchemy
 suds-py3k
+numpy
+opencv-python
 pycrypto
