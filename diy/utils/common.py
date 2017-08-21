@@ -36,7 +36,7 @@ class BaseClass(LogerInterface):
         prefix, zone: 要求小写
         :param username: 要求不带空格
         :param password: 要求不带空格
-        :param kwargs: 
+        :param kwargs:
                 level: debug
         """
         if not kwargs.get("log_level"):
@@ -46,7 +46,7 @@ class BaseClass(LogerInterface):
         self.username = username
         self.password = password
         self.is_login = False
-        self.zone = self._initialize()
+        self.zone = self._initialize(kwargs.get("zone", None))
         self.prefix = self.SUB_DOMAIN
 
     def login(self):
@@ -59,22 +59,32 @@ class BaseClass(LogerInterface):
     def web_session(self):
         return self._web_session
 
-    def _initialize(self):
-        cfg = Config.cfg
+    def _initialize(self, zone=None):
         # 进行地区服务地址初始化
-        if not hasattr(self, "zone"):
-            for prefix in cfg.sections():
-                if self.username.upper().startswith(prefix):
-                    for k, v in cfg[prefix].items():
-                        k = k.upper()
-                        if k.find("URI") > 0:
-                            v = "http://" + v
-                        setattr(self, k, v)
+        cfg = Config.cfg
 
-                    return prefix.lower()
+        if zone:
+            for k, v in cfg[zone.upper()].items():
+                k = k.upper()
+                if k.find("URI") > 0:
+                    v = "http://" + v
+                setattr(self, k, v)
 
-            err = u"[!!!] Unable to initialize this account. Please provide Username or Zone. 该地区不支持!"
-            return Exception(self.logger.error(err))
+            setattr(self, "zone", zone.lower())
+            return self.zone
+
+        for prefix in cfg.sections():
+            if self.username.upper().startswith(prefix):
+                for k, v in cfg[prefix].items():
+                    k = k.upper()
+                    if k.find("URI") > 0:
+                        v = "http://" + v
+                    setattr(self, k, v)
+
+                return prefix.lower()
+
+        err = u"[!!!] Unable to initialize this account. Please provide Username or Zone. 该地区不支持!"
+        return Exception(self.logger.error(err))
 
     def _login(self):
         assert all([self.username, self.password])
@@ -227,7 +237,10 @@ class IabeWebService(BaseClass, BaseWebService):
 
     @classmethod
     def from_orm(cls, orm_obj, **kwargs):
-        o = cls(orm_obj.username, orm_obj.password, **kwargs)
+        o = cls(orm_obj.username, orm_obj.password, zone=orm_obj.zone, **kwargs)
+
+        if kwargs.get("zone"):
+            o._initialize(zone=kwargs["zone"])
 
         o.meta = {k: v for k, v in orm_obj.__dict__.items() if not k.startswith("_")}
         http = Requests2Transport(**req_kwargs)
@@ -240,6 +253,9 @@ class IabeWebService(BaseClass, BaseWebService):
     @classmethod
     def from_simple(cls, username, password, **kwargs):
         o = cls(username, password, **kwargs)
+
+        if kwargs.get("zone"):
+            o._initialize(zone=kwargs["zone"])
         o.init_ws(**req_kwargs)
 
         return o
@@ -267,9 +283,9 @@ class IabeWebService(BaseClass, BaseWebService):
 
     def get_hao(self):
         # [完成]
-        hao = getattr(self.meta, "lscode", None)
-        if not hao:
-            hao = self._get_liu_shui_hao(self._get_xin_xi_v1())
+        if not getattr(self.meta, "lscode", None):
+            xx = self.get_xinxi()
+            hao = self._get_liu_shui_hao(xx)
             self.LiuShuiHao = hao
         return self.LiuShuiHao
 
@@ -366,7 +382,7 @@ class Iabe(BaseClass):
 
     @classmethod
     def set_account(cls, orm_obj, **kwargs):
-        o = cls(orm_obj.username, orm_obj.password, **kwargs)  # 初始化了loger，info
+        o = cls(orm_obj.username, orm_obj.password, zone=orm_obj.zone, **kwargs)  # 初始化了loger，info
         o.meta = {k: v for k, v in orm_obj.__dict__.items() if not k.startswith("_")}
 
         return o

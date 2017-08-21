@@ -404,14 +404,15 @@ class ApiHandler(BaseHandler):
     def add_account(self, *args, **kwargs):
         users_lt = self.get_accounts(param="username")
         password = self.get_argument("password")
+        zone = self.get_argument("zone")
         note = self.get_argument("para3", "None")
 
-        has_zone = to_bool(self.get_argument("has_zone", False))
-        if has_zone:
-            zone = self.get_argument("zone")
+        has_prefix = to_bool(self.get_argument("has_prefix", False))
+        if has_prefix:
+            zone = self.get_argument("prefix")
             users_lt = map(lambda user: zone + user, users_lt)
 
-        self._add_account(username=users_lt, pwd=password, note=note)
+        self._add_account(username=users_lt, pwd=password, note=note, zone=zone)
 
         return dict(result=True, detail=u"全部添加完成")
 
@@ -419,6 +420,7 @@ class ApiHandler(BaseHandler):
     def _add_account(self, *args, **kwargs):
         pwd = kwargs["pwd"]
         note = kwargs["note"]
+        zone = kwargs["zone"]
 
         with db_write() as db_ctx:
             for user in kwargs["username"]:
@@ -426,13 +428,17 @@ class ApiHandler(BaseHandler):
                 if query_user.first():
                     new_data = dict(password=pwd, notes=note, is_finish=0)
                     if not query_user.first().lscode:
-                        hao = IabeWebService.from_orm(query_user.first()).get_hao()
-                        new_data.update(dict(lscode=hao))
+                        o = IabeWebService.from_orm(query_user.first(), zone=zone)
+                        hao = o.get_hao()
+                        zone = zone and zone or o.zone
+                        new_data.update(dict(lscode=hao, zone=zone))
 
                     query_user.update(new_data)
                 else:
-                    hao = IabeWebService.from_simple(user, pwd).get_hao()
-                    u = User(username=user, password=pwd, notes=note, lscode=hao, responsible=self.user)
+                    o = IabeWebService.from_simple(user, pwd, zone=zone)
+                    hao = o.get_hao()
+                    zone = zone and zone or o.zone
+                    u = User(username=user, password=pwd, notes=note, lscode=hao, zone=zone, responsible=self.user)
                     db_ctx.add(u)
 
     def _add_face(self, username):
