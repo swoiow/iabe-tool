@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block title %}视频信息列表{% end %}
+
+{% block content %}
+<form action="/api/face/{{ username }}" method="post" enctype="multipart/form-data">
+    {% module xsrf_form_html() %}
+    <input type="hidden" name="username" value="{{ escape(username) }}"/>
+    <input type="file" name="photo" multiple="" />
+    <input type="submit" value="上传"/>
+</form>
+
+<div class="ui divider"></div>
+<div class="ui special cards">
+    {% if data %}
+    {% for d in data %}
+    <div class="card" data-uid="{{ username }}" data-md5="{{ d.photo_md5 }}">
+        <textarea id="{{ d.photo_md5 }}" style="display: none"></textarea>
+        <div class="blurring dimmable image">
+            <div class="ui dimmer">
+                <div class="content">
+                    <div class="center">
+                        <div class="ui inverted button">复制</div>
+                    </div>
+                </div>
+            </div>
+            <img src="data:image/jpeg;base64,{{ data2photo(d.enc_data) }}">
+        </div>
+        <div class="extra content">
+            <div class="ui two buttons">
+                <div class="ui basic blue button" data-btn="copy"> 复制</div>
+                <div class="ui basic green button" data-btn="used"> 标记已使用</div>
+            </div>
+        </div>
+    </div>
+    {% end %}
+    {% end %}
+</div>
+<script type="text/javascript">
+    $('.special.cards .image').dimmer({on: 'hover'});
+</script>
+{% end %}
