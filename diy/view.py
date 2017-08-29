@@ -14,12 +14,12 @@ import tornado.escape
 import tornado.gen
 import tornado.httpserver
 import tornado.ioloop
+import tornado.options
 import tornado.queues
 import tornado.template
 import tornado.web
 from sqlalchemy import or_, and_
 
-import Config
 from utils import *
 
 if PY_VERSION == 3:
@@ -60,10 +60,20 @@ def TWorker(func):
     return wrapper
 
 
+class MyStaticFileHandler(tornado.web.StaticFileHandler):
+    def set_default_headers(self):
+        if self._headers.get("Server"):
+            del self._headers["Server"]
+
+
 class BaseHandler(tornado.web.RequestHandler):
     def initialize(self):
         self.db_session = db_session
         self.user = self.get_current_user()
+
+    def set_default_headers(self):
+        if self._headers.get("Server"):
+            del self._headers["Server"]
 
     def get_current_user(self):
         return self.get_secure_cookie("user")
@@ -270,7 +280,7 @@ class WorkerHandler(BaseHandler):
     def task(self, username, action, **kwargs):
         var = self.get_argument("v")
 
-        action_map = dict(cg="call_cgw_v2", mn="call_moni_v2")
+        action_map = dict(cg="call_cgw", mn="call_moni_v2")
         func = action_map[action]
         user = self._get_user_orm(username)
         if isinstance(user, User):
@@ -573,6 +583,7 @@ class SyncHandler(BaseHandler):
 
 
 settings = {
+    "gzip": True,
     "debug": Config.DEBUG,
     "address": Config.HOST,
     "port": Config.PORT,
@@ -580,6 +591,7 @@ settings = {
     "xsrf_cookies": True,
     "cookie_secret": Config.SECRET_TOKEN,
     "static_path": Config.STATIC_DIR,
+    "static_handler_class": MyStaticFileHandler,
     "template_path": Config.TEMPLATES_DIR,
 }
 
@@ -597,6 +609,10 @@ application = tornado.web.Application([
 ], **settings)
 
 if __name__ == '__main__':
+    tornado.options.options.logging = "warning"
+    tornado.options.options.log_file_prefix = os.path.join(Config.LOG_DIR, "tornado.log")
+    tornado.options.parse_command_line()
+
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(Config.PORT, address=Config.HOST)
     tornado.ioloop.IOLoop.current().start()
