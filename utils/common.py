@@ -19,6 +19,7 @@ from utils.logerUnit import LogerInterface
 from utils.loginUnit import *
 from utils.sudsUnit import Requests2Transport
 
+SessionBucket = BasicItf.Bucket(timeout=1800)
 URLSeeker = BasicItf.URLSeeker
 default_header = BasicItf.default_header
 req_kwargs = dict(headers=default_header)
@@ -28,7 +29,6 @@ class BaseClass(LogerInterface):
     """
     初始化信息的入口，包括http头，帐号信息
     """
-    _web_session = requests.Session()
     _default_header = dict(default_header.items())
 
     def __init__(self, username="", password="", *args, **kwargs):
@@ -49,9 +49,18 @@ class BaseClass(LogerInterface):
         self.zone = self._initialize(kwargs.get("zone", None))
         self.prefix = self.SUB_DOMAIN
 
+        self._web_session = requests.Session()
+
     def login(self):
+        cache_session = SessionBucket.get(key=self.username)
+        if cache_session:
+            self.is_login = True
+            self._web_session = cache_session
+
         if not self.is_login:
             self._login()
+
+            SessionBucket.set(self.username, self.web_session)
 
         return self.web_session
 
@@ -165,8 +174,12 @@ class BaseClass(LogerInterface):
     def _asp_web_code_2():
         return get_net_code_with_htmlparser2()
 
-    def _login_cookies_check(self):
-        cookies_keys = self.web_session.cookies.keys()
+    def _login_cookies_check(self, session=None):
+        if not session:
+            session = self.web_session
+
+        assert isinstance(session, requests.Session) is True
+        cookies_keys = session.cookies.keys()
         return any(["citycode" in cookies_keys, "User" in cookies_keys, self.username in cookies_keys])
 
     @staticmethod

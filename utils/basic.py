@@ -7,6 +7,8 @@ import base64
 import os
 import random
 import re
+import time
+from collections import OrderedDict
 from datetime import (date)
 
 from Crypto.Cipher import DES
@@ -21,6 +23,7 @@ if PY_VERSION == 3:
     parse_qs = urlparse_.parse_qs
     urlparse = urlparse_.urlparse
     unquote = urlparse_.unquote
+
 if PY_VERSION == 2:
     from HTMLParser import HTMLParser
     from urlparse import (urlparse, parse_qs, unquote)
@@ -33,6 +36,43 @@ ws_key = os.environ.get("ws_key")
 ws_iv = os.environ.get("ws_iv")
 hb_key = os.environ.get("hb_key")
 hb_iv = os.environ.get("hb_iv")
+
+
+class Bucket(object):
+    _bucket = OrderedDict()
+
+    def __init__(self, max_size=300, timeout=None):
+        self._max_size = max_size
+        self._timeout = timeout
+
+    def get(self, key, default=None):
+        data = self._bucket.get(key)
+
+        if not data:
+            return default
+        o, expire = data
+        if expire and time.time() > expire:
+            del self._bucket[key]
+            return default
+        return o
+
+    def set(self, key, o, timeout=None):
+        self._check_limit()
+
+        if not timeout:
+            timeout = self._timeout
+
+        if timeout:
+            timeout = time.time() + timeout
+
+        self._bucket[key] = (o, timeout)
+
+    def _check_limit(self):
+        if len(self._bucket) >= self._max_size:
+            self._bucket.popitem(last=False)
+
+    def clear(self):
+        self._bucket = OrderedDict()
 
 
 class URLSeeker(HTMLParser):
@@ -155,7 +195,7 @@ def decrypt_ws(plaintext, key="", iv="", **kwargs):
 def data2urlencode(account, p5, p7, p8, p9, p6="1", method="15", is_post=False, **kwargs):
     """
         Instruction:
-    :param method:  默认15, 挑战场。 
+    :param method:  默认15, 挑战场。
     :param account: param1: 登录的帐号。
                     param2: 登录的帐号。
                     param3: 头像信息。默认../Upload/UserHead/001.jpg
