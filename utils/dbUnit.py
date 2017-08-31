@@ -3,14 +3,13 @@
 
 from __future__ import absolute_import
 
+import os
 from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import Session
 
-from Config import DB_PATH
-
-engine = create_engine(r"sqlite:///" + DB_PATH, echo=False)
+engine = create_engine(os.environ["IABE_DB_PATH"], echo=False)
 
 db_session = Session(bind=engine)
 

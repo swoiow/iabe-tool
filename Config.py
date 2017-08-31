@@ -15,13 +15,14 @@ STATIC_DIR = os.path.join(base_dir, "static")
 TEMPLATES_DIR = os.path.join(base_dir, "templates")
 
 data_dir = os.path.join(base_dir, "data36")
-DB_PATH = os.path.join(data_dir, "data.db")
+DB_PATH = os.environ.get("DIY_DB_PATH", r"sqlite:///" + os.path.join(data_dir, "data.db"))
 PKL_PATH = os.path.join(data_dir, "data.pkl")
 LOG_DIR = os.path.join(data_dir, "Logs")
 IMG_DIR = os.path.join(data_dir, "Imgs")
 
+cfg_path = os.environ.get("DIY_CONFIG_INI_PATH", os.path.join(data_dir, "config.ini"))
 cfg = ConfigParser(interpolation=ExtendedInterpolation())
-cfg.read(os.path.join(data_dir, "config.ini"))
+cfg.read(cfg_path)
 
 for k, v in cfg["COMMON"].items():
     os.environ[k] = v
@@ -41,4 +42,4 @@ for k in dir():
 
 ALLOW_LOGIN = cfg.get("AUTH", "USERS").split("\n")
 
-__all__ = [var for var in dir() if var.isupper()] + [cfg]
+__all__ = [var for var in dir() if var.isupper()] + ["cfg"]

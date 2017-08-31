@@ -6,3 +6,4 @@ sqlalchemy
 suds-py3k
 numpy
 pycrypto
+psycopg2

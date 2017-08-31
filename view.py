@@ -7,7 +7,6 @@ import functools
 import hashlib
 import threading
 import uuid
-from datetime import (datetime, timedelta)
 
 import tornado.concurrent
 import tornado.escape
@@ -20,6 +19,7 @@ import tornado.template
 import tornado.web
 from sqlalchemy import or_, and_
 
+import Config
 from utils import *
 
 if PY_VERSION == 3:
@@ -76,7 +76,8 @@ class BaseHandler(tornado.web.RequestHandler):
             del self._headers["Server"]
 
     def get_current_user(self):
-        return self.get_secure_cookie("user")
+        user = self.get_secure_cookie("user")
+        return user and user.decode()
 
     def get_accounts(self, param):
         block_rule = re.compile("[\w]+")
@@ -98,19 +99,25 @@ class BaseHandler(tornado.web.RequestHandler):
     @staticmethod
     def datetime2str(date, format_='%Y.%m.%d'):
         date_obj = None
-        if isinstance(date, datetime):
+        if isinstance(date, datetime.datetime):
             date_obj = date
         elif isinstance(date, float):
-            return datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
+            return datetime.datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
 
         elif isinstance(date, str):
             guest_lt = ["%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S,%f"]
 
             for item in guest_lt:
                 try:
-                    date_obj = datetime.strptime(date, item) + timedelta(hours=8)
+                    date_obj = datetime.datetime.strptime(date, item) + datetime.timedelta(hours=8)
                 except ValueError:
                     pass
+
+            try:
+                date = float(date)
+                return datetime.datetime.fromtimestamp(date).strftime('%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                pass
 
         if date_obj:
             return date_obj.strftime(format_)
@@ -382,7 +389,7 @@ class ApiHandler(BaseHandler):
     def show_status(self, username):
         with db_read() as db_ctx:
             query = db_ctx.query(Loger.content). \
-                filter(Loger.logerName == "log_" + username). \
+                filter(Loger.loger_name == "log_" + username). \
                 order_by(Loger.create_date.desc()). \
                 limit(1)
             return dict(account=username, result=query.first())
@@ -397,7 +404,7 @@ class ApiHandler(BaseHandler):
 
         with db_read() as db_ctx:
             query = db_ctx.query(Loger.create_date, Loger.content). \
-                filter(Loger.logerName == "log_" + username). \
+                filter(Loger.loger_name == "log_" + username). \
                 order_by(Loger.create_date.desc()). \
                 limit(PER_SIZE). \
                 offset((page - 1) * PER_SIZE)
@@ -509,10 +516,11 @@ class ApiHandler(BaseHandler):
         var = self.get_argument("var", None)
         user = self._get_user_orm(username)
 
-        client = Iabe.set_account(user)
-        if var:
-            result = client.call_exchange(var)
-            return dict(success=True, result=result)
+        with db_read() as db_ctx:
+            client = Iabe.set_account(user, db_obj=db_ctx, log_var="db", log_level="info")
+            if var:
+                result = client.call_exchange(var)
+                return dict(success=True, result=result)
         return self.send_error(410)
 
 
@@ -593,6 +601,7 @@ settings = {
     "static_path": Config.STATIC_DIR,
     "static_handler_class": MyStaticFileHandler,
     "template_path": Config.TEMPLATES_DIR,
+    # "xsrf_cookie_kwargs": dict(httponly=True, secure=True),
 }
 
 application = tornado.web.Application([
@@ -608,10 +617,12 @@ application = tornado.web.Application([
     (r"/do/(cg|mn)", WorkerHandler),
 ], **settings)
 
+
 if __name__ == '__main__':
-    tornado.options.options.logging = "warning"
-    tornado.options.options.log_file_prefix = os.path.join(Config.LOG_DIR, "tornado.log")
-    tornado.options.parse_command_line()
+    if not Config.DEBUG:
+        tornado.options.options.logging = "warning"
+        tornado.options.options.log_file_prefix = os.path.join(Config.LOG_DIR, "tornado.log")
+        tornado.options.parse_command_line()
 
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(Config.PORT, address=Config.HOST)

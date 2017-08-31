@@ -55,14 +55,14 @@ class DBHandler(logging.Handler):
 
     def emit(self, record):
         if hasattr(self.db_obj, "write_db"):
-            sql = "INSERT INTO loger (type, logerName, create_date, content) VALUES (?, ?, ?, ?);"
+            sql = "INSERT INTO loger (type, loger_name, create_date, content) VALUES (?, ?, ?, ?);"
             self.format(record)
             self.db_obj.write_db(sql, args=(record.levelname, record.name, record.asctime, record.message))
 
         else:
             w_log = Loger(
                 type=record.levelname,
-                logerName=record.name,
+                loger_name=record.name,
                 create_date=record.created,
                 content=record.msg
             )

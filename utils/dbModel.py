@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, LargeBinary, Text, text, REAL
+import datetime
+
+from sqlalchemy import (Column, DateTime, Integer, LargeBinary, Text, VARCHAR)
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -12,23 +14,39 @@ class Face(Base):
     __tablename__ = 'face'
 
     id = Column(Integer, primary_key=True)
-    username = Column(Text(12))
+    username = Column(VARCHAR(12))
     photo = Column(LargeBinary)
     enc_data = Column(Text)
-    photo_md5 = Column(Text(32))
-    photo_type = Column(Text(10))
-    used = Column(Integer, server_default=text("0"))
-    create_date = Column(DateTime, server_default=text("(datetime(CURRENT_TIMESTAMP,'utc'))"))
+    photo_md5 = Column(VARCHAR(32))
+    photo_type = Column(VARCHAR(10))
+    used = Column(Integer, server_default="0")
+    create_date = Column(DateTime)
+
+    def __init__(self, **kwargs):
+        if not kwargs.get("create_date"):
+            self.create_date = datetime.datetime.utcnow()
+
+        for obj in (f for f in self.__class__.__dict__.keys() if not f.startswith("_")):
+            if kwargs.get(obj):
+                setattr(self, obj, kwargs[obj])
 
 
 class Loger(Base):
     __tablename__ = 'loger'
 
     id = Column(Integer, primary_key=True)
-    type = Column(Text(10))
-    logerName = Column(Text(20), index=True)
-    create_date = Column(REAL, server_default=text("(datetime(CURRENT_TIMESTAMP,'utc'))"))
-    content = Column(Text(250))
+    type = Column(VARCHAR(10))
+    loger_name = Column(VARCHAR(20), index=True)
+    create_date = Column(VARCHAR)
+    content = Column(Text)
+
+    def __init__(self, **kwargs):
+        if not kwargs.get("create_date"):
+            self.create_date = datetime.datetime.utcnow()
+
+        for obj in (f for f in self.__class__.__dict__.keys() if not f.startswith("_")):
+            if kwargs.get(obj):
+                setattr(self, obj, kwargs[obj])
 
 
 class Setting(Base):
@@ -44,10 +62,18 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     lscode = Column(Integer)
-    username = Column(Text(80), index=True)
-    password = Column(Text(20), server_default=text("1234"))
-    create_date = Column(DateTime, server_default=text("(datetime(CURRENT_TIMESTAMP,'utc'))"))
-    zone = Column(Text(5))
-    is_finish = Column(Boolean, server_default=text("0"))
-    responsible = Column(Text(30))
-    notes = Column(Text)
+    username = Column(VARCHAR(80), index=True)
+    password = Column(VARCHAR(20), server_default="1234")
+    create_date = Column(DateTime)
+    zone = Column(VARCHAR(5))
+    is_finish = Column(Integer, default=0)
+    responsible = Column(Text)
+    notes = Column(Text, default="")
+
+    def __init__(self, **kwargs):
+        if not kwargs.get("create_date"):
+            self.create_date = datetime.datetime.utcnow()
+
+        for obj in (f for f in self.__class__.__dict__.keys() if not f.startswith("_")):
+            if kwargs.get(obj):
+                setattr(self, obj, kwargs[obj])
