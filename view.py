@@ -523,73 +523,6 @@ class ApiHandler(BaseHandler):
                 return dict(success=True, result=result)
         return self.send_error(410)
 
-
-class SyncHandler(BaseHandler):
-    def post(self, *args, **kwargs):
-        action = self.get_argument("action", None)
-        if self.user:
-            if action == "settings":
-                resp = self.do_settings()
-            elif action == "sync":
-                node_param = self.get_argument("node", None)
-                node = os.environ.get(node_param, None)
-                if node:
-                    resp = self.do_sync(node)
-                else:
-                    resp = dict(result=u"参数有误")
-            else:
-                return self.send_error(412)
-        else:
-            return self.send_error(403)
-
-        return self.finish(resp)
-
-    def patch(self, *args, **kwargs):
-        import pickle
-
-        ts = self.get_argument("ts", "")
-        tk = self.get_argument("tk", "")
-        data = self.get_argument("data", "")
-
-        if (int(time.time()) - 120) > ts:
-            return self.send_error(400)
-
-        m = hashlib.md5(ts + os.environ.get("syncid", "")).hexdigest()
-        if tk == m:
-            o = pickle.load(data)
-            query = self.db_session.query(User.id).filter(User.username == o.username).first()
-            if not query:
-                with db_write() as session:
-                    session.add(o)
-
-    def do_settings(self):
-        master = self.get_argument("node", "127.0.0.1")
-        os.environ["MAIN"] = master
-
-        return dict(result=True)
-
-    def do_sync(self, node):
-        import requests
-        import pickle
-        is_all = to_bool(self.get_argument("all", 0))
-
-        if is_all:
-            query = self.db_session.query(User)
-        else:
-            query = self.db_session.query(User).filter(User.is_finish == 0)
-
-        for user in query.all():
-            ts = int(time.time())
-            payload = dict(
-                ts=ts,
-                tk=hashlib.md5(ts + os.environ.get("syncid", "")).hexdigest(),
-                data=pickle.dumps(user)
-            )
-            requests.patch(node + "/sync", data=payload)
-
-        return dict(result=True)
-
-
 settings = {
     "gzip": True,
     "debug": Config.DEBUG,
@@ -608,7 +541,6 @@ application = tornado.web.Application([
     (r"/robots.txt", tornado.web.StaticFileHandler),
     (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": settings['static_path']}),
     (r"/", tornado.web.RedirectHandler, dict(url=r"/index")),
-    (r"/sync", SyncHandler),
     (r"/(index|add|search)", UsersHandler),
     (r"/api/users?method=add", tornado.web.RedirectHandler, dict(url=r"/api/add")),
     (r"/(login|logout)", Authenticate),

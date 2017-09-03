@@ -27,9 +27,6 @@ cfg.read(cfg_path)
 for k, v in cfg["COMMON"].items():
     os.environ[k] = v
 
-for k, v in cfg["SYNC"].items():
-    os.environ[k] = v
-
 for k, v in cfg["MAIL"].items():
     os.environ[k] = v
 
