@@ -38,7 +38,7 @@ class LogerInterface(object):
 
         elif log_var == "file":
             assert "LOG_DIR" in globals().keys()
-            handler = logging.FileHandler(LOG_DIR + "/" + self.log_name + ".log")
+            handler = logging.FileHandler(LOG_DIR + "/" + self.log_name + ".log", encoding="utf8")
             handler.setFormatter(logging.Formatter(self.__default_format__))
             self.logger.addHandler(handler)
 

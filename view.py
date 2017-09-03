@@ -19,7 +19,7 @@ import tornado.template
 import tornado.web
 from sqlalchemy import or_, and_
 
-import Config
+__import__("Config")
 from utils import *
 
 if PY_VERSION == 3:
@@ -293,7 +293,11 @@ class WorkerHandler(BaseHandler):
         if isinstance(user, User):
             with db_read() as db_ctx:
                 client = Iabe.set_account(user, db_obj=db_ctx, log_var="db", log_level="info")
-                if all([action == "mn", user.password == "1234"]):  # 强制使用v1方法
+
+                if action == "mn" and any([
+                    user.zone == "yl",
+                    user.password == "1234",
+                ]):  # 强制使用v1方法
                     func = "call_moni_v1"
 
                 getattr(client, func)(var)
