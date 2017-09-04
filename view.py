@@ -7,6 +7,7 @@ import functools
 import hashlib
 import threading
 import uuid
+import importlib
 
 import tornado.concurrent
 import tornado.escape
@@ -19,7 +20,7 @@ import tornado.template
 import tornado.web
 from sqlalchemy import or_, and_
 
-__import__("Config")
+importlib.import_module("Config")
 from utils import *
 
 if PY_VERSION == 3:
@@ -476,6 +477,8 @@ class ApiHandler(BaseHandler):
                     wf.write(item.body)
 
                 try:
+                    detectFaceUnit = importlib.import_module("utils.detectFaceUnit")
+
                     face_discern = detectFaceUnit.detect_faces(p)
                 except Exception as e:
                     os.remove(p)

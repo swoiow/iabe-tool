@@ -5,7 +5,6 @@ if sys.version_info > (3, 0):
 else:
     PY_VERSION = 2
 
-import utils.detectFaceUnit as detectFaceUnit
 from utils.basic import *
 from utils.common import *
 from utils.dbModel import *
