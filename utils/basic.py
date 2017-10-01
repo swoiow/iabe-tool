@@ -221,7 +221,7 @@ def data2urlencode(account, p5, p7, p8, p9, p6="1", method="15", is_post=False, 
         "param7": encrypt(p7),
         "param8": encrypt(p8),
         "param9": encrypt(p9),
-        "param10": encrypt(random.randint(0, 300000)),
+        "param10": encrypt(random.randint(0, 1000000)),
         # "param10": encrypt("112300"),
     }
 
@@ -238,7 +238,7 @@ def data2urldecode(text, single=False):
         r = urlparse("http://localhost?" + text)
         d = parse_qs(r.query)
         for k, v in sorted(list(d.items()), key=lambda x: x[0]):
-            print("the key: %s " % k + "decrypt: %s" % decrypt(v[0]))
+            # print("the key: %s " % k + "decrypt: %s" % decrypt(v[0]))
             raw.append((k, v[0]))
 
         return dict(raw)
