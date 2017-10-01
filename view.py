@@ -5,9 +5,9 @@ from __future__ import absolute_import
 
 import functools
 import hashlib
+import importlib
 import threading
 import uuid
-import importlib
 
 import tornado.concurrent
 import tornado.escape
@@ -67,14 +67,19 @@ class MyStaticFileHandler(tornado.web.StaticFileHandler):
             del self._headers["Server"]
 
 
-class BaseHandler(tornado.web.RequestHandler):
-    def initialize(self):
-        self.db_session = db_session
-        self.user = self.get_current_user()
-
+class BaseRequest(tornado.web.RequestHandler):
     def set_default_headers(self):
         if self._headers.get("Server"):
             del self._headers["Server"]
+
+    def get(self, *args, **kwargs):
+        self.send_error(404)
+
+
+class BaseHandler(BaseRequest):
+    def initialize(self):
+        self.db_session = db_session
+        self.user = self.get_current_user()
 
     def get_current_user(self):
         user = self.get_secure_cookie("user")
@@ -296,8 +301,8 @@ class WorkerHandler(BaseHandler):
                 client = Iabe.set_account(user, db_obj=db_ctx, log_var="db", log_level="info")
 
                 if action == "mn" and any([
-                    user.zone == "yl",
-                    user.password == "1234",
+                            user.zone == "yl",
+                            user.password == "1234",
                 ]):  # 强制使用v1方法
                     func = "call_moni_v1"
 
@@ -530,8 +535,10 @@ class ApiHandler(BaseHandler):
                 return dict(success=True, result=result)
         return self.send_error(410)
 
+
 settings = {
     "gzip": True,
+    "compress_response": True,
     "debug": Config.DEBUG,
     "address": Config.HOST,
     "port": Config.PORT,
@@ -539,8 +546,9 @@ settings = {
     "xsrf_cookies": True,
     "cookie_secret": Config.SECRET_TOKEN,
     "static_path": Config.STATIC_DIR,
-    "static_handler_class": MyStaticFileHandler,
     "template_path": Config.TEMPLATES_DIR,
+    "static_handler_class": MyStaticFileHandler,
+    "default_handler_class": BaseRequest
     # "xsrf_cookie_kwargs": dict(httponly=True, secure=True),
 }
 
@@ -555,7 +563,6 @@ application = tornado.web.Application([
     (r"/api/(face|logs|note||process|status|xue|exchange)/(\w{2}\d{7})", ApiHandler),
     (r"/do/(cg|mn)", WorkerHandler),
 ], **settings)
-
 
 if __name__ == '__main__':
     if not Config.DEBUG:
