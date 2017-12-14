@@ -560,7 +560,7 @@ application = tornado.web.Application([
     (r"/api/users?method=add", tornado.web.RedirectHandler, dict(url=r"/api/add")),
     (r"/(login|logout)", Authenticate),
     (r"/api/(add|pwd)", ApiHandler),
-    (r"/api/(face|logs|note||process|status|xue|exchange)/(\w{2}\d{7})", ApiHandler),
+    (r"/api/(face|logs|note||process|status|xue|exchange)/(\w{2}\d{7,8})", ApiHandler),
     (r"/do/(cg|mn)", WorkerHandler),
 ], **settings)
 
