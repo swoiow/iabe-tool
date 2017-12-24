@@ -2,7 +2,11 @@
 {% block title %}帐号列表{% end %}
 {% block css %}
 <style>
-    pre { white-space: pre-wrap; word-wrap: break-word; font-family: Consolas, "Courier New", Menlo, Monaco, monospace; }
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: Consolas, "Courier New", Menlo, Monaco, monospace;
+    }
 </style>
 {% end %}
 
@@ -50,9 +54,7 @@
             <td> {{ dateformat(user.create_date) }}</td>
             <td class="i_status"> {{ escape(user.notes) }}</td>
             <td class="i_ctrl">
-                <a href="/api/face/{{ user.username }}">
-                    <button class="mini ui button "> 视频</button>
-                </a>
+                <a class="mini ui button" href="/api/face/{{ user.username }}">视频</a>
                 <button class="mini ui button i_log" data-uid="{{ escape(user.username) }}"> 日志</button>
                 <button class="mini ui button i_note"> 备注</button>
             </td>

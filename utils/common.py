@@ -15,7 +15,7 @@ from suds.client import Client
 
 import Config
 import utils.basic as BasicItf
-from utils.logerUnit import LogerInterface
+from utils.logItf import Logger
 from utils.loginUnit import *
 from utils.sudsUnit import Requests2Transport
 
@@ -25,7 +25,7 @@ default_header = BasicItf.default_header
 req_kwargs = dict(headers=default_header)
 
 
-class BaseClass(LogerInterface):
+class BaseClass(object):
     """
     初始化信息的入口，包括http头，帐号信息
     """
@@ -39,9 +39,7 @@ class BaseClass(LogerInterface):
         :param kwargs:
                 level: debug
         """
-        if not kwargs.get("log_level"):
-            kwargs["log_level"] = "debug"
-        super(BaseClass, self).__init__(log_name=username, **kwargs)
+        self.logger = Logger(name="log_" + username, log_db=True, **kwargs)
 
         self.username = username
         self.password = password

@@ -301,8 +301,8 @@ class WorkerHandler(BaseHandler):
                 client = Iabe.set_account(user, db_obj=db_ctx, log_var="db", log_level="info")
 
                 if action == "mn" and any([
-                            user.zone == "yl",
-                            user.password == "1234",
+                    user.zone == "yl",
+                    user.password == "1234",
                 ]):  # 强制使用v1方法
                     func = "call_moni_v1"
 
@@ -451,6 +451,8 @@ class ApiHandler(BaseHandler):
 
         with db_write() as db_ctx:
             for user in kwargs["username"]:
+                logger = Logger(name="log_%s" % user, log_db=True)
+
                 query_user = db_ctx.query(User).filter(User.username == user)
                 if query_user.first():
                     new_data = dict(password=pwd, notes=note, is_finish=0)
@@ -461,12 +463,17 @@ class ApiHandler(BaseHandler):
                         new_data.update(dict(lscode=hao, zone=zone))
 
                     query_user.update(new_data)
+
+                    logger.info("更新帐号")
+
                 else:
                     o = IabeWebService.from_simple(user, pwd, zone=zone)
                     hao = o.get_hao()
                     zone = zone and zone or o.zone
                     u = User(username=user, password=pwd, notes=note, lscode=hao, zone=zone, responsible=self.user)
                     db_ctx.add(u)
+
+                    logger.info("添加帐号")
 
     def _add_face(self, username):
         assert username is not None
