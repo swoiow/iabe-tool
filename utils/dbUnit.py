@@ -8,8 +8,11 @@ from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm.session import Session
+from sqlalchemy.pool import SingletonThreadPool
 
-engine = create_engine(os.environ["IABE_DB_PATH"], echo=False)
+engine = create_engine(os.environ["IABE_DB_PATH"],
+                       poolclass=SingletonThreadPool,
+                       echo=False)
 
 db_session = Session(bind=engine)
 
