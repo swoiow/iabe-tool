@@ -1,0 +1,236 @@
+{% extends "sui.tpl" %}
+
+{% block title %} 帐号列表 {% endblock %}
+
+{% set advanced_tools = [
+("/iabe/api/video", "视频", "video"),
+("/iabe/api/logs", "日志", "logs"),
+("/iabe/api/progress", "学习进度", "progress"),
+] %}
+
+{% block body %}
+    <div class="page-group">
+        <div class="page">
+            <header class="bar bar-nav">
+                <button class="button button-link button-nav pull-left">
+                    <span class="icon icon-me"></span>
+                </button>
+
+                <h1 class="title">帐号列表</h1>
+            </header>
+
+            <nav class="bar bar-tab">
+                <a class="tab-item" href="{{ url('adduser') }}">
+                    <span class="tab-label">添加帐号</span>
+                </a>
+
+                <a class="tab-item external">
+                    <span class="tab-label create-actions">更多功能</span>
+                </a>
+            </nav>
+
+            <div class="content">
+                {% for user in accounts %}
+                    <div class="card" data-user="{{ user.username }}">
+                        <div class="card-header">
+                            <input class="checkbox_zoom pull-left" type="checkbox" style="zoom: 1.2"/>
+                            {{ user.username }}
+                            <div></div>
+                            <a class="icon icon-refresh pull-right"></a>
+                        </div>
+                        <div class="card-content">
+                            <div class="card-content-inner">
+                                {{ user.note }}
+                            </div>
+                            <div class="card-content-inner">
+                                添加于：{{ user.created_at.strftime('%Y-%m-%d') }}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            {% for link, name, flag in advanced_tools %}
+                                <span data-href="{{ link }}/{{ user.username }}"
+                                      class="link {{ flag }}">{{ name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="panel-overlay"></div>
+        <div class="panel panel-left panel-reveal theme-dark" id='panel-left-demo'>
+            {% include "about.html" ignore missing with context %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    {{ super() }}
+    <script>
+        function DynamicPopup(data) {
+            var popupHTML = '<div class="popup">' +
+                '<div class="content-block">' +
+                '<p><a href="#" class="close-popup pull-right"> 关闭 </a></p>' +
+                data.join("</p>") +
+                '</div>' +
+                '</div>';
+            $.popup(popupHTML);
+        }
+
+        function SendPost(type, uri) {
+            $.ajax({
+                type: type,
+                cache: false,
+                url: uri,
+                dataType: "json",
+                beforeSend: function () {
+                    $.toast("准备添加任务...", 1000);
+                },
+                success: function (data) {
+                    $.alert("已添加任务")
+                }
+            })
+        }
+
+        $(document).on('click', 'span.link.logs', function () {
+            var log_data = ["没找到日志"];
+            var uri = $(this).attr("data-href");
+            $.ajax({
+                type: "get", cache: false, url: uri + "?lv=info", dataType: "json",
+                beforeSend: function () {
+                    $.toast("正在查询...", 1000);
+                },
+                success: function (data) {
+                    log_data = [];
+                    $.each(data, function () {
+                        t = [new Date(parseInt(this.created_at) * 1000).toLocaleString(), this.content].join(", ");
+                        log_data.push(t);
+                    });
+                    DynamicPopup(log_data)
+                },
+            });
+        });
+
+        $(document).on('click', 'span.link.progress', function () {
+            var uri = $(this).attr("data-href");
+            $.ajax({
+                type: "get", cache: false, url: uri, dataType: "json",
+                beforeSend: function () {
+                    $.toast("正在查询...", 1000);
+                },
+                success: function (data) {
+                    DynamicPopup([data.result])
+                },
+            });
+        });
+
+        $(document).on('click', '.icon-me', function () {
+            $.openPanel("#panel-left-demo");
+        });
+
+        $(document).on('click', '.icon-refresh', function () {
+            var element = this;
+            var user = $(element).closest(".card").attr("data-user");
+            $.ajax({
+                type: "get",
+                cache: false,
+                url: "/iabe/api/xue/" + user,
+                dataType: "json",
+                beforeSend: function () {
+                    $.toast("正在查询...", 1000);
+                },
+                success: function (data) {
+                    $(element).siblings("div").html("(今天已学 " + data.msg + " 小时)")
+                }
+                //complete: function () {
+                //    $.hidePreloader();
+                //}
+            })
+        });
+
+        $(document).on('click', '.create-actions', function () {
+            var dom_lst = $("input.pull-left[type=checkbox]:checked");
+
+            var buttons1 = [{text: '请选择', label: true},
+                {
+                    text: '全部刷新', onClick: function () {
+                        $.each($("a.icon-refresh.pull-right"), function () {
+                            $(this).trigger("click")
+                        })
+                    }
+                }, {
+                    text: '完成', onClick: function () {
+                        $.alert("你选择了“买入“");
+                    }
+                }, {
+                    text: '闯关 P1', onClick: function () {
+                        $.each(dom_lst, function () {
+                            var user = $(this).closest(".card").attr("data-user");
+                            SendPost("get", "/iabe/add_pool/" + user + "?action=cw1");
+                        })
+                    }
+                }, {
+                    text: '闯关 P4', onClick: function () {
+                        $.each(dom_lst, function () {
+                            var user = $(this).closest(".card").attr("data-user");
+                            SendPost("get", "/iabe/add_pool/" + user + "?action=cw4");
+                        })
+                    }
+                }, {
+                    text: '模拟 P1', onClick: function () {
+                        $.each(dom_lst, function () {
+                            var user = $(this).closest(".card").attr("data-user");
+                            SendPost("get", "/iabe/add_pool/" + user + "?action=mn1");
+                        })
+                    }
+                }, {
+                    text: '模拟 P4', onClick: function () {
+                        $.each(dom_lst, function () {
+                            var user = $(this).closest(".card").attr("data-user");
+                            SendPost("get", "/iabe/add_pool/" + user + "?action=mn4");
+                        })
+                    }
+                }, {
+                    text: '兑换 P1', onClick: function () {
+                        $.each(dom_lst, function () {
+                            var user = $(this).closest(".card").attr("data-user");
+                            $.ajax({
+                                type: "get",
+                                cache: false,
+                                url: "/iabe/api/exchange/" + user + "?action=cw1",
+                                dataType: "json",
+                                beforeSend: function () {
+                                    $.toast("正在查询...", 1000);
+                                },
+                                success: function (data) {
+                                    $.alert("已添加任务")  //TODO
+                                }
+                            })
+                        })
+                    }
+                }, {
+                    text: '兑换 P4', onClick: function () {
+                        $.each(dom_lst, function () {
+                            var user = $(this).closest(".card").attr("data-user");
+                            $.ajax({
+                                type: "get",
+                                cache: false,
+                                url: "/iabe/api/exchange/" + user + "?action=cw4",
+                                dataType: "json",
+                                beforeSend: function () {
+                                    $.toast("正在查询...", 1000);
+                                },
+                                success: function (data) {
+                                    $.alert("已添加任务")  //TODO
+                                }
+                            })
+                        })
+                    }
+                }
+            ];
+            var buttons2 = [{text: '取消', bg: 'danger'}];
+            var groups = [buttons1, buttons2];
+            $.actions(groups);
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,5 @@
+Django
+Jinja2
+requests
+six
+suds_jurko

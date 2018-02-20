@@ -1,0 +1,92 @@
+{% extends "global.tpl" %}
+
+{% block title %} 登录 {% endblock %}
+
+{% block css %}
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap@3.3.7/dist/css/bootstrap.min.css"/>
+
+    <style>
+        body {
+            padding-top: 40px;
+            padding-bottom: 40px;
+            background-color: #eee;
+        }
+
+        .form-signin {
+            max-width: 330px;
+            padding: 15px;
+            margin: 0 auto;
+        }
+
+        .form-signin .form-signin-heading {
+            margin-bottom: 10px;
+        }
+
+        .form-signin .form-control {
+            position: relative;
+            box-sizing: border-box;
+            height: auto;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .form-signin .form-control:focus {
+            z-index: 2;
+        }
+
+        .form-signin input {
+            margin: .5rem auto;
+        }
+
+        .form-signin input[type="text"] {
+            margin-bottom: -1px;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .form-signin input[type="password"] {
+            margin-bottom: 10px;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <form class="form-signin" action="{{ url("login") }}" method="post">
+            {%- if err_msg is defined -%}
+                <div class="alert alert-warning" role="alert">
+                    <strong>警告!</strong> {{ err_msg }}
+                </div>
+            {%- endif -%}
+
+            {{ csrf_input }}
+            <h2 class="form-signin-heading">认证</h2>
+
+            <label for="inputEmail" class="sr-only">帐号</label>
+            <input type="text" name="username" class="form-control" placeholder="用户名或邮箱" required="" autofocus="">
+            <label for="inputPassword" class="sr-only">密码</label>
+            <input type="password" name="password" class="form-control" placeholder="密码" required="">
+            <input type="hidden" name="_" class="form-control">
+            <button class="btn btn-lg btn-primary btn-block" type="submit">登入</button>
+        </form>
+    </div>
+{% endblock %}
+
+
+{% block js %}
+    {#    <script src="https://unpkg.com/crypto-js@3.1.9-1/crypto-js.js"></script>#}
+    {#    <script>#}
+    {#        var tk = $("input[name=csrfmiddlewaretoken]").val();#}
+    {#        $("form").submit(function () {#}
+    {#            _ = Math.round(new Date().getTime() / 1000.0);#}
+    {#            $("input[name=_]").val(_);#}
+    {##}
+    {#            var $dom = $("input[name=password]");#}
+    {#            var text = $dom.val();#}
+    {#            $dom.val(md5(tk + text + _))#}
+    {#        })#}
+    {#    </script>#}
+{% endblock %}
