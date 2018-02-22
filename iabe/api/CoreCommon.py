@@ -103,7 +103,7 @@ def encrypt(plaintext, key=None, iv=None, **kwargs):
         day = date.today().day
         day = day < 10 and "%02d" % day or day
 
-        key, iv = hb_key and hb_key or common_key, hb_iv and hb_iv or common_iv
+        key, iv = key and key or (hb_key or common_key), iv and iv or (hb_iv or common_iv)
         key, iv = key + str(day), iv + str(day)
 
     if not isinstance(plaintext, str):
