@@ -341,6 +341,7 @@ class ClientWebService(BaseClient, BaseWebService):
             xx = self.get_xinxi()
             hao = self._get_liu_shui_hao(xx)
             self.LiuShuiHao = hao
+            self.logger.info("get sn: %s" % self.LiuShuiHao)
         return self.LiuShuiHao
 
     def get_xueshi(self):
