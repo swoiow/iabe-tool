@@ -131,11 +131,12 @@ def index(request):
 class Api(LoginView):
     def view(self, request, *args, **kwargs):
         action_map = [
+            ("exchange", self.get_exchange),
             ("logs", self.get_log),
-            ("xue", self.get_xue),
             ("note", self.get_note),
             ("progress", self.get_progress),
             ("pwd", self.get_pwd),
+            ("xue", self.get_xue),
         ]
 
         action = kwargs.get("action")
