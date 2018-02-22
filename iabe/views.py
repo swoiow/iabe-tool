@@ -98,6 +98,7 @@ class UserManage(LoginView):
             username = ["{}{}".format(area_prefix, user) for user in username]
 
         for user in username:
+            user = user.strip()
             o = ClientWebService.from_simple(user, password, zone=area)
             sn = o.get_hao()
 
