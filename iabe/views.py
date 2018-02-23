@@ -172,7 +172,7 @@ class Api(LoginView):
     def get_progress(self, request, **kwargs):
         obj = getattr(self, "obj")
 
-        query = obj.call_learn_progress()
+        query = obj.call_learn_progress_v2()
         if query:
             return JsonResponse(query)
 
