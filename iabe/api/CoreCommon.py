@@ -64,7 +64,7 @@ class Bucket(object):
 
 
 class URLSeeker(HTMLParser):
-    def __init__(self, check_dom=(), dom_attr=(False, None), get_process=False):
+    def __init__(self, check_dom=(), dom_attr=(False, None)):
         """
         :param check_dom: tag, attr, value
         """
@@ -74,12 +74,11 @@ class URLSeeker(HTMLParser):
         self._tag, self._attr, self._value = check_dom
         self.data = []
         self.__find__ = False
-        self.get_process = get_process
 
         if dom_attr:
             self.dom_attr = dom_attr[0]
             self.dom_attr_name = dom_attr[1]
-            self.dom_attr_value = ""
+            self.dom_attr_value = []
 
     def handle_starttag(self, tag, attrs):
         gid = dict(attrs).get(self._attr, "")
@@ -87,7 +86,7 @@ class URLSeeker(HTMLParser):
             self.__find__ = True
 
             if self.dom_attr:
-                self.dom_attr_value = dict(attrs).get(self.dom_attr_name)
+                self.dom_attr_value.append(dict(attrs).get(self.dom_attr_name))
 
     def handle_data(self, data):
         if self.__find__:
