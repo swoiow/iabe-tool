@@ -545,6 +545,27 @@ class ClientWebApi(BaseClient):
         self.logger.info(result)
         return dict(result=result)
 
+    def call_learn_progress_v2(self):
+        """学习进度"""
+        rule = re.compile("[<>/span]+")
+
+        self.logger.info(u" 准备执行'查询学习进度情况' ".center(30, "="))
+        self.login()
+
+        req = self.web_session.get(self.SCHEDULE_URI2, headers=self._default_header)
+        data = []
+        for kw in [dict(check_dom=("div", "class", "progress"), dom_attr=(True, "data-original-title"))
+                   ]:
+            url_seeker = URLSeeker(**kw)
+            url_seeker.feed(req.text)
+            data = url_seeker.dom_attr_value
+
+        result = u"学习进度: " + "; ".join([i for i in data if i])
+        result = re.sub(rule, "", result)
+
+        self.logger.info(result)
+        return dict(result=result)
+
     def _call_moni_v2(self, var):
         self.login()
 
