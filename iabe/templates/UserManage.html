@@ -114,7 +114,8 @@
 
     $("#username").on("blur", function () {
         var old_var = $(this).val();
-        $(this).val(old_var.replace(/[，,\s]+/g, " "))
+        var new_var = old_var.replace(/[，,\s]+/g, ", ");
+        $(this).val(new_var)
     });
 
     function SubmitForm() {

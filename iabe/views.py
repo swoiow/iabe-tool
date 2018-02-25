@@ -93,12 +93,13 @@ class UserManage(LoginView):
         o_lst = []
         region_choices = dict(User.REGION_CHOICES)
 
-        username = username.split("\n")
+        if isinstance(username, list):
+            username = username[0]
+        username = username.split(", ")
         if area_prefix != "无":
-            username = ["{}{}".format(area_prefix, user) for user in username]
+            username = ["{}{}".format(area_prefix, user.strip()) for user in username]
 
         for user in username:
-            user = user.strip()
             o = ClientWebService.from_simple(user, password, zone=area)
             sn = o.get_hao()
 
