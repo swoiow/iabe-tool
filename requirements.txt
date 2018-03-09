@@ -1,5 +1,8 @@
+beautifulsoup4
 Django
 Jinja2
+lxml
 requests
 six
 suds_jurko
+pyyaml

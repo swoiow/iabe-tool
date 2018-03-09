@@ -4,6 +4,10 @@
 import random
 from collections import OrderedDict
 
+import requests
+from six import BytesIO as StringIO
+from suds.transport import Transport
+
 
 class UAS(object):
     spider = [
@@ -69,11 +73,16 @@ class UA(object):
 
 class HTTPHeaders(object):
     @staticmethod
+    def ua_only(type_=None):
+        return UA.get(type_=type_)
+
+    @staticmethod
     def get(ua=None):
         if not ua:
             get_ua = UA.get()
         else:
             get_ua = ua
+
         return OrderedDict({
             "Connection": "keep-alive",
             "Accept-Encoding": "gzip, deflate",
@@ -94,15 +103,119 @@ class HTTPHeaders(object):
 
     @staticmethod
     def virtual_ip():
+        def random_ip():
+            return lambda: "%s.%s.%s.%s" % (randint(1, 255), randint(1, 255), randint(1, 255), randint(1, 255))
+
         randint = random.randint
         modify_list = [
             "Via", "CLIENT_IP", "X-Real-Ip", "REMOTE_ADDR", "REMOTE_HOST", "X-Forwarded-For", "X_FORWARDED_FOR"
         ]
-        random_ip = lambda: "%s.%s.%s.%s" % (randint(1, 255), randint(0, 255), randint(0, 255), randint(1, 255))
+
         ip = random_ip()
         headers = {k: ip for k in modify_list}
         return headers
 
 
-if __name__ == "__main__":
-    print(HTTPHeaders.get_bot())
+class PostHeaders(object):
+    __default_header__ = HTTPHeaders.get()
+
+    def _cg_headers(self):
+        headers = {
+            "X-Requested-With": "ShockwaveFlash/27.0.0.180",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+
+        swf_headers = {
+            # "Origin": "http://%s.iabe.cn" % self.SUB_DOMAIN,
+            # "Referer": "http://%s.iabe.cn/ecar/ProjectEcar.swf?v=123456" % self.SUB_DOMAIN,
+        }
+
+        headers.update(self.__default_header__, **swf_headers)
+        return headers
+
+    def _ws_headers(self):
+        headers = {
+            "X-Requested-With": "ShockwaveFlash/27.0.0.180",
+            "Content-Type": "text/xml; charset=utf-8",
+        }
+
+        swf_headers = {
+            # "Origin": "http://%s.iabe.cn" % self.SUB_DOMAIN,
+            # "Referer": self.WS_REFERER,
+        }
+
+        headers.update(self.__default_header__, **swf_headers)
+        return headers
+
+    def _ex_headers(self):
+        headers = {
+            "X-Requested-With": "XMLHttpRequest",
+            # "Referer": "http://%s.iabe.cn/public/Index.aspx?area=8" % self.SUB_DOMAIN,
+        }
+
+        headers.update(self.__default_header__)
+        return headers
+
+    def _normal_headers(self):
+        headers = {
+            "Content-Type": "application/json;charset=UTF-8",
+            "X-Requested-With": "XMLHttpRequest",
+        }
+
+        headers.update(self.__default_header__)
+        return headers
+
+    @property
+    def CgwHeaders(self):
+        return self._cg_headers()
+
+    @property
+    def WebHeaders(self):
+        return self._normal_headers()
+
+    @property
+    def WebserviceHeaders(self):
+        return self._ws_headers()
+
+    @property
+    def ExchangeHeaders(self):
+        return self._ex_headers()
+
+
+class Requests2Transport(Transport):
+    def __init__(self, session=None, **kwargs):
+        super(Requests2Transport, self).__init__()
+        self.__session_ = session or requests.session()
+
+        if kwargs.get("headers"):
+            self.extra_headers = {k: v for k, v in kwargs.pop("headers").items()}
+
+    def open(self, request):
+        response = self.__session_.get(request.url, params=request.message)
+        response.raise_for_status()
+        return StringIO(response.content)
+
+    def send(self, request):
+        kwargs = {}
+        if hasattr(self, "extra_headers"):
+            kwargs.update({"headers": self.extra_headers})
+
+        response = self.session.post(request.url, data=request.message, **kwargs)
+        response.headers = response.headers
+        response.message = response.content
+        if response.headers.get('content-type') not in ('text/xml', 'application/soap+xml'):
+            response.raise_for_status()
+        return response
+
+    @property
+    def session(self):
+        return self.__session_
+
+    @session.setter
+    def session(self, value):
+        if not isinstance(value, requests.Session):
+            raise TypeError("session must be requests.Session class!")
+        self.__session_ = value
+
+
+PostHeaderInstance = PostHeaders()

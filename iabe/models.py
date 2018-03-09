@@ -13,11 +13,11 @@ class User(models.Model):
     REGION_YL = "YL"
 
     REGION_CHOICES = [
-        (REGION_CZ, "沧州"),
-        (REGION_FS, "佛山"),
-        (REGION_JM, "江门"),
-        (REGION_SG, "韶关"),
-        (REGION_YL, "玉林"),
+        (REGION_CZ, "CZ"),
+        (REGION_FS, "FS"),
+        (REGION_JM, "JM"),
+        (REGION_SG, "SG"),
+        (REGION_YL, "YL"),
     ]
 
     sn = models.IntegerField(verbose_name="流水号")

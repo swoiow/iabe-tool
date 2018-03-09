@@ -13,6 +13,9 @@ urlpatterns = [
     url('adduser', view=views.UserManage.as_view(), name='adduser'),
     url('^pools', view=views.task.show_tasks, name='task_pool'),
     url('add_pool/(?P<account>\w{2}\d{7,8})', view=views.task.add_task, name='add_pool'),
-    url('api/(?P<action>logs|note|progress|pwd|xue|exchange)/(?P<account>\w{2}\d{7,8})',
+    url('api/(?P<action>finish|logs|note|progress|pwd|xue|exchange)/(?P<account>\w{2}\d{7,8})',
         view=views.api.view),
+    url('rest/(?P<action>finish)/(?P<account>[\w,\d]+)',
+        view=views.api.view),
+
 ]

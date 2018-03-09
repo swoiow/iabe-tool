@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""
 # from Crypto.Cipher import AES
+# from iabe.api.Core import ClientWebApi, ClientWebService, iClient
+"""
 
 from threading import Thread
 
@@ -10,27 +13,16 @@ from django.forms.models import model_to_dict
 from django.http import HttpResponseNotFound, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 
-from iabe.api.Core import ClientWebApi, ClientWebService, iClient
+from iabe.api.src import MixClient
+from iabe.api.src.WebBase import Cache
 from iabe.models import Log, User
-
-
-def HexToByte(hexStr):
-    bytes = []
-
-    hexStr = ''.join(hexStr.split(" "))
-
-    for i in range(0, len(hexStr), 2):
-        bytes.append(chr(int(hexStr[i:i + 2], 16)))
-
-    return ''.join(bytes)
-
 
 pools = []
 action_map = [
-    ("cw1", ClientWebApi.PARAM_CGW_1),
-    ("cw4", ClientWebApi.PARAM_CGW_4),
-    ("mn1", ClientWebApi.PARAM_MONI_1),
-    ("mn4", ClientWebApi.PARAM_MONI_4),
+    ("cw1", MixClient.PARAM_CGW_1),
+    ("cw4", MixClient.PARAM_CGW_4),
+    ("mn1", MixClient.PARAM_MONI_1),
+    ("mn4", MixClient.PARAM_MONI_4),
 ]
 
 
@@ -73,10 +65,38 @@ class Tasks:
     def _init_account(account):
         query = User.objects.filter(username=account).first()
         if query:
-            query.zone = account[:2]
-            return iClient.from_orm(query)
+            return MixClient.init_from_dict(model_to_dict(query))
 
         return None
+
+    @staticmethod
+    def create_account(request,
+                       username,
+                       password,
+                       area,
+                       beizhu):
+        region_choices = dict(User.REGION_CHOICES)
+
+        o = MixClient(username=username, password=password, zone=area)
+
+        if password in [1234, "1234"]:
+            if o._change_pwd_v1("123456"):
+                password = "123456"
+                Cache.pop(username)
+
+        sn = o.get_hao
+
+        user_obj = dict(
+            sn=sn,
+            username=username,
+            password=password,
+            region=region_choices[area.upper()],
+            creator_id=request.user.id,
+            note=beizhu,
+            is_finish=False,
+        )
+
+        User.objects.create(**user_obj)
 
 
 class UserManage(LoginView):
@@ -95,36 +115,50 @@ class UserManage(LoginView):
 
         if isinstance(username, list):
             username = username[0]
-        username = username.split(", ")
-        if area_prefix != "无":
-            username = ["{}{}".format(area_prefix, user.strip()) for user in username]
-
+        username = username.split(",")
+        username = [i for i in username if i]
         for user in username:
-            o = ClientWebService.from_simple(user, password, zone=area)
-            sn = o.get_hao()
+            if area_prefix != "无":
+                user = "{}{}".format(area_prefix, user.strip())
 
-            user_obj = User(
-                sn=sn,
-                username=user,
-                password=password,
-                region=region_choices[area.upper()],
-                creator_id=request.user.id,
-                note=beizhu,
-            )
-            o_lst.append(user_obj)
+            q = User.objects.filter(username=user)
+            if not q:
+                p = Thread(name="create_account",
+                           target=Tasks.create_account,
+                           kwargs=dict(
+                               request=request,
+                               username=user,
+                               password=password,
+                               area=area,
+                               beizhu=beizhu,
+                           ))
+                pools.append(p)
+                p.start()
 
-        User.objects.bulk_create(o_lst)
+            else:
+                user_obj = dict(
+                    username=username,
+                    password=password,
+                    region=region_choices[area.upper()],
+                    note=beizhu,
+                    is_finish=False,
+                )
+                q.update(**user_obj)
+
+            # o_lst.append(user_obj)
+        # User.objects.bulk_create(o_lst)
+        # User.objects.update_or_create(o_lst)
 
         return HttpResponseRedirect('/iabe/index/')
 
 
 @login_required
 def index(request):
-    page_size = 10
+    page_size = 30
     page = request.POST.get("page", 1)
     s1, s2 = (page - 1) * page_size, page * page_size
 
-    query_user = User.objects.order_by('updated_at').all()[s1:s2]
+    query_user = User.objects.filter(is_finish=False).order_by('updated_at').all()[s1:s2]
     context = dict(accounts=query_user, page=page, current_user=request.user)
     return render(request, "index.html", context=context)
 
@@ -138,11 +172,15 @@ class Api(LoginView):
             ("progress", self.get_progress),
             ("pwd", self.get_pwd),
             ("xue", self.get_xue),
+            ("finish", self.make_finish),
         ]
 
         action = kwargs.get("action")
         self.account = kwargs.get("account")
         self._init_account()
+
+        if self.account.find(",") >= 0:
+            self.account = [i.strip() for i in self.account.split(",")]
 
         if dict(action_map).get(action):
             resp = dict(action_map)[action](request=request)
@@ -152,6 +190,8 @@ class Api(LoginView):
         return HttpResponseNotFound(403)
 
     def get_log(self, request, **kwargs):
+        assert isinstance(self.account, (str, bytes))
+
         lv = 0
         if request.GET.get("lv"):
             lv = getattr(Log, "%s_%s" % ("LOG", request.GET["lv"].upper()))
@@ -164,28 +204,30 @@ class Api(LoginView):
         if query:
             return JsonResponse([model_to_dict(o, exclude=["id"]) for o in query], safe=False)
 
-    def get_note(self, request, **kwargs):
+    def get_note(self, **kwargs):
         obj = getattr(self, "obj")
         query = obj.meta["note"]
 
         return JsonResponse({"msg": query})
 
-    def get_progress(self, request, **kwargs):
+    def get_progress(self, **kwargs):
         obj = getattr(self, "obj")
+        obj.login()
 
-        query = obj.call_learn_progress_v2()
+        query = obj.get_total_stage()
         if query:
             return JsonResponse(query)
 
-    def get_pwd(self, request, **kwargs):
+    def get_pwd(self, **kwargs):
         obj = getattr(self, "obj")
         query = obj.meta["password"]
         return JsonResponse({"msg": query})
 
-    def get_xue(self, request, **kwargs):
+    def get_xue(self, **kwargs):
         obj = getattr(self, "obj")
+        obj.login()
 
-        query = obj.get_xueshi()
+        query = obj.get_today_learn()
         if query:
             return JsonResponse(query)
 
@@ -196,11 +238,20 @@ class Api(LoginView):
         result = obj.call_exchange(dict(action_map)[action])
         return JsonResponse({"msg": result})
 
+    def make_finish(self, **kwargs):
+        __lst__ = self.account
+        if isinstance(__lst__, str):
+            __lst__ = [self.account]
+
+        obj = User.objects.filter(username__in=__lst__)
+        obj.update(is_finish=True)
+
+        return JsonResponse({"msg": True})
+
     def _init_account(self):
         query = User.objects.filter(username=self.account).first()
         if query:
-            query.zone = self.account[:2]
-            setattr(self, "obj", iClient.from_orm(query))
+            setattr(self, "obj", MixClient(zone=query.region, **model_to_dict(query)))
 
 
 api = Api()

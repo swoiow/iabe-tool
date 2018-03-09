@@ -1,103 +1,33 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-
 import base64
 import os
 import random
 import re
-import time
-from collections import OrderedDict
 from datetime import date
 
-import six
 from Crypto.Cipher import DES
-from six.moves import html_parser, urllib
+from six.moves import urllib
 
-HTMLParser = html_parser.HTMLParser
 parse = urllib.parse
 
-common_key = os.environ.get("common_key")
-common_iv = os.environ.get("common_iv")
-ws_key = os.environ.get("ws_key")
-ws_iv = os.environ.get("ws_iv")
-hb_key = os.environ.get("hb_key")
-hb_iv = os.environ.get("hb_iv")
 
+def load_key():
+    # TODO: 改写从文件获得
+    common_key = os.environ.get("common_key")
+    common_iv = os.environ.get("common_iv")
+    ws_key = os.environ.get("ws_key")
+    ws_iv = os.environ.get("ws_iv")
+    hb_key = os.environ.get("hb_key")
+    hb_iv = os.environ.get("hb_iv")
 
-class Bucket(object):
-    _bucket = OrderedDict()
-
-    def __init__(self, max_size=300, timeout=None):
-        self._max_size = max_size
-        self._timeout = timeout
-
-    def get(self, key, default=None):
-        data = self._bucket.get(key)
-
-        if not data:
-            return default
-        o, expire = data
-        if expire and time.time() > expire:
-            del self._bucket[key]
-            return default
-        return o
-
-    def set(self, key, o, timeout=None):
-        self._check_limit()
-
-        if not timeout:
-            timeout = self._timeout
-
-        if timeout:
-            timeout = time.time() + timeout
-
-        self._bucket[key] = (o, timeout)
-
-    def _check_limit(self):
-        if len(self._bucket) >= self._max_size:
-            self._bucket.popitem(last=False)
-
-    def clear(self):
-        self._bucket = OrderedDict()
-
-
-class URLSeeker(HTMLParser):
-    def __init__(self, check_dom=(), dom_attr=(False, None)):
-        """
-        :param check_dom: tag, attr, value
-        """
-        # HTMLParser.__init__(self)
-        super(URLSeeker, self).__init__()
-
-        self._tag, self._attr, self._value = check_dom
-        self.data = []
-        self.__find__ = False
-
-        if dom_attr:
-            self.dom_attr = dom_attr[0]
-            self.dom_attr_name = dom_attr[1]
-            self.dom_attr_value = []
-
-    def handle_starttag(self, tag, attrs):
-        gid = dict(attrs).get(self._attr, "")
-        if all([gid.find(self._value) > -1, tag == self._tag]):
-            self.__find__ = True
-
-            if self.dom_attr:
-                self.dom_attr_value.append(dict(attrs).get(self.dom_attr_name))
-
-    def handle_data(self, data):
-        if self.__find__:
-            self.data.append(data.strip())
-
-    def handle_endtag(self, tag):
-        if tag == self._tag:
-            self.__find__ = False
+    return common_key, common_iv, ws_key, ws_iv, hb_key, hb_iv
 
 
 def encrypt(plaintext, key=None, iv=None, **kwargs):
+    common_key, common_iv, ws_key, ws_iv, hb_key, hb_iv = load_key()
+
     if (not key) and (not iv):
         day = date.today().day
         day = day < 10 and "%02d" % day or day
@@ -118,6 +48,8 @@ def encrypt(plaintext, key=None, iv=None, **kwargs):
 
 
 def decrypt(plaintext, key=None, iv=None, **kwargs):
+    common_key, common_iv, ws_key, ws_iv, hb_key, hb_iv = load_key()
+
     if (not key) and (not iv):
         day = date.today().day
         day = day < 10 and "%02d" % day or day
@@ -139,6 +71,8 @@ def decrypt(plaintext, key=None, iv=None, **kwargs):
 
 
 def encrypt_ws(plaintext, key="", iv="", **kwargs):
+    common_key, common_iv, ws_key, ws_iv, hb_key, hb_iv = load_key()
+
     if (not key) and (not iv):
         day = date.today().day
         day = day < 10 and "%02d" % day or day
@@ -159,6 +93,8 @@ def encrypt_ws(plaintext, key="", iv="", **kwargs):
 
 
 def decrypt_ws(plaintext, key="", iv="", **kwargs):
+    common_key, common_iv, ws_key, ws_iv, hb_key, hb_iv = load_key()
+
     if (not key) and (not iv):
         day = date.today().day
         day = day < 10 and "%02d" % day or day
@@ -226,58 +162,3 @@ def data2urldecode(text, single=False):
             raw.append((k, v[0]))
 
         return dict(raw)
-
-
-def set_strip(param, *args, **kwargs):
-    if isinstance(param, str):
-        param = param.lower()
-    elif isinstance(param, int):
-        param = str(param)
-
-    return param.strip()
-
-
-def char_transform(words, coding="utf-8", to_str=False, force=False):
-    """
-    :param to_str: 是否转换成str。默认返回utf8
-    """
-    if any([six.PY2, force]):
-        if to_str:
-            if isinstance(words, str):
-                return words
-
-            if isinstance(words, unicode):
-                try:
-                    return words.encode(coding)
-                except UnicodeEncodeError:
-                    return char_transform(words.encode("gbk"), to_str=True)
-
-        if isinstance(words, unicode):
-            return words
-
-        if isinstance(words, str):
-            try:
-                return words.decode(coding)
-            except UnicodeDecodeError:
-                return char_transform(words.decode("gbk"))
-
-    else:
-        if isinstance(words, bytes):
-            if to_str:
-                return str(words, coding)
-            return words
-
-        elif isinstance(words, str):
-            if to_str:
-                return words
-            return bytes(words, coding)
-
-        return words
-
-
-def to_bool(value):
-    if str(value).lower() in ("yes", "y", "true", "t", "1", "on"):
-        return True
-    elif str(value).lower() in ("no", "n", "false", "f", "0", "0.0", "off", "", " ", "none", "[]", "{}"):
-        return False
-    raise Exception('Invalid value for boolean conversion: ' + str(value))

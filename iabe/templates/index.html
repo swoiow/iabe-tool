@@ -67,6 +67,13 @@
 {% block js %}
     {{ super() }}
     <script>
+        $(document).on('makeFinish', function () {
+            var dom_lst = $("input.pull-left[type=checkbox]:checked");
+            $.each(dom_lst, function () {
+                $(this).parents(".card").remove()
+            })
+        });
+
         function DynamicPopup(data) {
             var popupHTML = '<div class="popup">' +
                 '<div class="content-block">' +
@@ -140,7 +147,7 @@
                     $.toast("正在查询...", 1000);
                 },
                 success: function (data) {
-                    $(element).siblings("div").html("(今天已学 " + data.msg + " 小时)")
+                    $(element).siblings("div").html("(今天已学 " + data.result + " 小时)")
                 }
                 //complete: function () {
                 //    $.hidePreloader();
@@ -160,7 +167,13 @@
                     }
                 }, {
                     text: '完成', onClick: function () {
-                        $.alert("你选择了“买入“");
+                        var ustlst = [];
+                        $.each(dom_lst, function () {
+                            var user = $(this).closest(".card").attr("data-user");
+                            ustlst.push(user)
+                        });
+                        SendPost("get", "/iabe/rest/finish/" + ustlst.join(","));
+                        $(document).trigger('makeFinish');
                     }
                 }, {
                     text: '闯关 P1', onClick: function () {
