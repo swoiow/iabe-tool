@@ -10,9 +10,9 @@ from functools import lru_cache
 
 import requests
 
+from iabe import apps
 from . import crypto
 from .WebBase import ClientWebBase
-from iabe import apps
 from .ihttp import HTTPHeaders
 
 
@@ -119,7 +119,7 @@ class CGApi(ClientWebBase):
             try:
                 response = resp.json()
                 exchange_rv = response["ExChange"][0]["result"]
-                exchange_rv = "兑换完成。返回信息: %s\n" % exchange_rv
+                exchange_rv = "兑换信息: %s\n" % exchange_rv
                 self.logger.info(exchange_rv)
                 return exchange_rv
             except ValueError:
