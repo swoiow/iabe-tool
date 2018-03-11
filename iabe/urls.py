@@ -5,6 +5,7 @@ from django.conf.urls import url
 
 from iabe import admin, views
 
+app_name = 'iabe'
 urlpatterns = [
     url('index/', view=views.index, name='index'),
     url('^login$', view=admin.Auth.as_view(), name='login'),

@@ -8,14 +8,18 @@
     <h3>用户信息</h3>
     <p>会话用户：{{ current_user.username }}</p>
     <p>剩余帐号数量：999 </p>
-    <a class="external" href="{{ url('task_pool') }}">任务管理</a>
+    <a class="external" href="{{ url('iabe:task_pool') }}">任务管理</a>
+    {% if current_user.is_superuser %}
+        <p></p>
+        <a class="external" href="{{ url('admin:index') }}">网站管理</a>
+    {% endif %}
     <hr/>
     <h3>用户权限</h3>
     <p>闯关王：允许</p>
     <p>模拟考试：允许</p>
     <p>视频：允许</p>
     <hr/>
-    <a>修改密码</a>
+    <a href="{{ url('admin:password_change') }}">修改密码</a>
     <p></p>
-    <a href="{{ url('logout') }}">退出</a>
+    <a href="{{ url('iabe:logout') }}">退出</a>
 </div>

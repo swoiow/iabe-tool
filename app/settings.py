@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from .settings_dbg import *
+import uuid
 
 SECRET_KEY = os.urandom(50)
 
@@ -16,3 +17,5 @@ DATABASES = {
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+
+ADMIN_PROTECT = str(uuid.uuid4())

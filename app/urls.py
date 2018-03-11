@@ -4,9 +4,10 @@
 from django.conf import settings
 from django.conf.urls import url
 from django.conf.urls.static import static
-from django.contrib import admin as django_admin
 from django.urls import include, path
 from django.views.static import serve
+from django.contrib import admin as django_admin
+
 from iabe import admin, views
 
 urlpatterns = [
@@ -14,9 +15,14 @@ urlpatterns = [
     url('^accounts/login/$', admin.Auth.as_view(), name="login"),
     url('^accounts/logout/$', admin.Auth.logout, name="logout"),
 
-    path('admin/', django_admin.site.urls),
     path('iabe/', include("iabe.urls")),
 ]
+
+if hasattr(settings, "ADMIN_PROTECT"):
+    url_code = settings.ADMIN_PROTECT
+    urlpatterns += [path('%s/admin/' % url_code, django_admin.site.urls)]
+else:
+    urlpatterns += [path('admin/', django_admin.site.urls)]
 
 """
 http://blog.csdn.net/dong_W_/article/details/78767573

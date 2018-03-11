@@ -3,124 +3,124 @@
 {% block title %} 添加帐号 {% endblock %}
 
 {% block body %}
-<header class="bar bar-nav">
-    <a class="icon icon-left pull-left" href="{{ url('index') }}" data-no-cache="true"></a>
-    <h1 class="title">添加帐号</h1>
-</header>
+    <header class="bar bar-nav">
+        <a class="icon icon-left pull-left" href="{{ url('iabe:index') }}" data-no-cache="true"></a>
+        <h1 class="title">添加帐号</h1>
+    </header>
 
-<nav class="bar bar-tab">
-    <a class="tab-item" href="{{ url('index') }}">
-        <span class="tab-label"> 返回首页 </span>
-    </a>
-</nav>
+    <nav class="bar bar-tab">
+        <a class="tab-item" href="{{ url('iabe:index') }}">
+            <span class="tab-label"> 返回首页 </span>
+        </a>
+    </nav>
 
-<div class="content">
-    <form id="UserAddForm" method="post" action="{{ url('adduser') }}">
-        <div class="list-block">
-            <ul>
-                <li>
-                    <div class="item-content">
-                        <div class="item-inner">
-                            <div class="item-title label">地区前缀</div>
-                            <div class="item-input">
-                                <input type="text" name="area-prefix" id="area-prefix" value="无"/>
+    <div class="content">
+        <form id="UserAddForm" method="post" action="{{ url('iabe:adduser') }}">
+            <div class="list-block">
+                <ul>
+                    <li>
+                        <div class="item-content">
+                            <div class="item-inner">
+                                <div class="item-title label">地区前缀</div>
+                                <div class="item-input">
+                                    <input type="text" name="area-prefix" id="area-prefix" value="无"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </li>
+                    </li>
 
-                <li>
-                    <div class="item-content">
-                        <div class="item-inner">
-                            <div class="item-title label">默认密码</div>
-                            <div class="item-input">
-                                <input type="email" name="password" placeholder="默认密码: 1234" value="1234">
+                    <li>
+                        <div class="item-content">
+                            <div class="item-inner">
+                                <div class="item-title label">默认密码</div>
+                                <div class="item-input">
+                                    <input type="email" name="password" placeholder="默认密码: 1234" value="1234">
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </li>
+                    </li>
 
-                <li>
-                    <div class="item-content">
-                        <div class="item-inner">
-                            <div class="item-title label">帐号地区</div>
-                            <div class="item-input">
-                                <input type="text" name="area" id="area" value="无"/>
+                    <li>
+                        <div class="item-content">
+                            <div class="item-inner">
+                                <div class="item-title label">帐号地区</div>
+                                <div class="item-input">
+                                    <input type="text" name="area" id="area" value="无"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </li>
+                    </li>
 
-                <li class="align-top">
-                    <div class="item-content">
-                        <div class="item-inner">
-                            <div class="item-title label">帐号列表</div>
-                            <div class="item-input">
-                                <textarea name="username" id="username" placeholder="帐号以 ' ' 或 ',' 分割"></textarea>
+                    <li class="align-top">
+                        <div class="item-content">
+                            <div class="item-inner">
+                                <div class="item-title label">帐号列表</div>
+                                <div class="item-input">
+                                    <textarea name="username" id="username" placeholder="帐号以 ' ' 或 ',' 分割"></textarea>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </li>
+                    </li>
 
-                <li class="align-top">
-                    <div class="item-content">
-                        <div class="item-inner">
-                            <div class="item-title label">备注</div>
-                            <div class="item-input">
-                                <textarea name="beizhu"></textarea>
+                    <li class="align-top">
+                        <div class="item-content">
+                            <div class="item-inner">
+                                <div class="item-title label">备注</div>
+                                <div class="item-input">
+                                    <textarea name="beizhu"></textarea>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </li>
-            </ul>
-        </div>
+                    </li>
+                </ul>
+            </div>
 
-        <div class="content-block">
-            {{ csrf_input }}
-            <a onclick="SubmitForm()" class="button button-big button-fill button-success button-round"> 提交 </a>
-        </div>
-    </form>
-</div>
+            <div class="content-block">
+                {{ csrf_input }}
+                <a onclick="SubmitForm()" class="button button-big button-fill button-success button-round"> 提交 </a>
+            </div>
+        </form>
+    </div>
 {% endblock %}
 
 {% block js %}
-{{ super() }}
-<script>
-    $("#area-prefix").picker({
-        toolbarTemplate: '<header class="bar bar-nav">\
+    {{ super() }}
+    <script>
+        $("#area-prefix").picker({
+            toolbarTemplate: '<header class="bar bar-nav">\
   <button class="button button-link pull-right close-picker">确定</button>\
   <h1 class="title">选择帐号前缀</h1>\
   </header>',
-        cols: [
-            {
-                textAlign: "center",
-                values: ["无", "fs", "jm", "yl", "lq", "sg", "cz"]
-            }
-        ]
-    });
+            cols: [
+                {
+                    textAlign: "center",
+                    values: ["无", "fs", "jm", "yl", "lq", "sg", "cz"]
+                }
+            ]
+        });
 
-    $("#area").picker({
-        toolbarTemplate: '<header class="bar bar-nav">\
+        $("#area").picker({
+            toolbarTemplate: '<header class="bar bar-nav">\
   <button class="button button-link pull-right close-picker">确定</button>\
   <h1 class="title">选择帐号地区</h1>\
   </header>',
-        cols: [
-            {
-                textAlign: "center",
-                values: ["fs", "jm", "yl", "sg", "cz"]
-            }
-        ]
-    });
+            cols: [
+                {
+                    textAlign: "center",
+                    values: ["fs", "jm", "yl", "sg", "cz"]
+                }
+            ]
+        });
 
-    $("#username").on("blur", function () {
-        var old_var = $(this).val();
-        var new_var = old_var.replace(/[，,\s]+/g, ", ");
-        $(this).val(new_var)
-    });
+        $("#username").on("blur", function () {
+            var old_var = $(this).val();
+            var new_var = old_var.replace(/[，,\s]+/g, ", ");
+            $(this).val(new_var)
+        });
 
-    function SubmitForm() {
-        $("#username").toggle("blur");
-        $("#UserAddForm").submit()
-    }
-</script>
+        function SubmitForm() {
+            $("#username").toggle("blur");
+            $("#UserAddForm").submit()
+        }
+    </script>
 {% endblock %}
