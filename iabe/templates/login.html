@@ -55,7 +55,8 @@
 
 {% block body %}
     <div class="container">
-        <form class="form-signin" action="{{ url("login") }}" method="post">
+        <form class="form-signin" action="{{ url("login") }}?next={{ request.GET.get("next", url("iabe:index")) }}"
+              method="post">
             {%- if err_msg is defined -%}
                 <div class="alert alert-warning" role="alert">
                     <strong>警告!</strong> {{ err_msg }}

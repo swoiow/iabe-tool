@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 # from Crypto.Cipher import AES
-# from iabe.api.Core import ClientWebApi, ClientWebService, iClient
 """
 
 from threading import Thread
-
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.views import LoginView
+from django.contrib.auth import mixins
+from django.views import View
 from django.forms.models import model_to_dict
 from django.http import HttpResponseNotFound, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
@@ -26,12 +25,12 @@ action_map = [
 ]
 
 
-class Tasks:
+class Tasks(mixins.LoginRequiredMixin, View):
     @staticmethod
     def show_tasks(request):
         return JsonResponse(dict(msg=repr(pools)))
 
-    def add_task(self, request, account):
+    def get(self, request, account):
         action = request.GET.get("action")
 
         if action.startswith("cw"):
@@ -99,7 +98,7 @@ class Tasks:
         User.objects.create(**user_obj)
 
 
-class UserManage(LoginView):
+class UserManage(mixins.LoginRequiredMixin, View):
     def get(self, request):
         return render(request, "UserManage.html")
 
@@ -163,8 +162,8 @@ def index(request):
     return render(request, "index.html", context=context)
 
 
-class Api(LoginView):
-    def view(self, request, *args, **kwargs):
+class Api(mixins.LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
         action_map = [
             ("exchange", self.get_exchange),
             ("logs", self.get_log),
@@ -253,6 +252,3 @@ class Api(LoginView):
         if query:
             setattr(self, "obj", MixClient(zone=query.region, **model_to_dict(query)))
 
-
-api = Api()
-task = Tasks()
