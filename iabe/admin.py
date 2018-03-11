@@ -6,7 +6,11 @@ from django.views import View
 
 class Auth(View):
     def get(self, request, *args, **kwargs):
-        return render(request, "login.html")
+        next_page = request.GET.get("next", '/iabe/index/')
+        if request.user.is_authenticated:
+            return HttpResponseRedirect(next_page)
+        else:
+            return render(request, "login.html")
 
     def post(self, request, *args, **kwargs):
         username = request.POST.get("username")
@@ -18,7 +22,7 @@ class Auth(View):
         user = auth.authenticate(username=username, password=password)
         if user is not None and user.is_active:
             auth.login(request, user)
-            return HttpResponseRedirect('/iabe/index/')
+            return HttpResponseRedirect(request.GET.get("next", '/iabe/index/'))
         else:
             ctx = dict()
             ctx["err_msg"] = "用户名不存在或密码错误"
