@@ -5,17 +5,20 @@
 """
 
 from threading import Thread
-from django.contrib.auth.decorators import login_required
+
 from django.contrib.auth import mixins
-from django.views import View
+from django.contrib.auth.decorators import login_required
 from django.forms.models import model_to_dict
 from django.http import HttpResponseNotFound, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
+from django.views import View
+from gevent.pool import Pool
 
 from iabe.api.src import MixClient
 from iabe.api.src.WebBase import Cache
 from iabe.models import Log, User
 
+pool = Pool(3)
 pools = []
 action_map = [
     ("cw1", MixClient.PARAM_CGW_1),
@@ -28,6 +31,10 @@ action_map = [
 class Tasks(mixins.LoginRequiredMixin, View):
     @staticmethod
     def show_tasks(request):
+        for t in pools:
+            if isinstance(t, Thread):
+                if not t.isAlive():
+                    pools.remove(t)
         return JsonResponse(dict(msg=repr(pools)))
 
     def get(self, request, account):
@@ -122,21 +129,17 @@ class UserManage(mixins.LoginRequiredMixin, View):
 
             q = User.objects.filter(username=user)
             if not q:
-                p = Thread(name="create_account",
-                           target=Tasks.create_account,
-                           kwargs=dict(
-                               request=request,
-                               username=user,
-                               password=password,
-                               area=area,
-                               beizhu=beizhu,
-                           ))
-                pools.append(p)
-                p.start()
+                pool.spawn(Tasks.create_account, **dict(
+                    request=request,
+                    username=user,
+                    password=password,
+                    area=area,
+                    beizhu=beizhu,
+                )).join()
 
             else:
                 user_obj = dict(
-                    username=username,
+                    username=user,
                     password=password,
                     region=region_choices[area.upper()],
                     note=beizhu,
@@ -251,4 +254,3 @@ class Api(mixins.LoginRequiredMixin, View):
         query = User.objects.filter(username=self.account).first()
         if query:
             setattr(self, "obj", MixClient(zone=query.region, **model_to_dict(query)))
-
